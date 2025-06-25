@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 10vh;
+            overflow-x: hidden;
+        }
+
+        /* Top Header Bar */
+        .header {
+            width: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            padding: 15px 20px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+        .header .user-info { display: flex; align-items: center; font-size: 1.1em; font-weight: 500; }
+        .header .user-info i { margin-right: 10px; font-size: 1.3em; }
+
+        /* Container for DM and Settings icons */
+        .header .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Space between DM and Settings icons */
+            position: relative; /* For positioning the settings dropdown */
+        }
+        
+        /* DM and Settings icon style */
+        .header .dm-icon,
+        .header .settings-icon { /* Updated for settings icon */
+            color: #fff;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .header .dm-icon:hover,
+        .header .settings-icon:hover { /* Updated for settings icon */
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Style for the verified tick in header (matching comments.html & search.html) */
+        .header .verified-tick-header {
+            width: 14px; /* Reduced from 18px */
+            height: 14px; /* Reduced from 18px */
+            vertical-align: middle;
+            margin-left: 3px; /* Reduced from 5px, closer to username */
+            fill: #fff;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            margin-top: 80px; /* Space for fixed top header */
+            margin-bottom: 70px; /* Space for fixed bottom footer */
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center content horizontally */
+        }
+
+        .profile-card {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .profile-picture {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #00BCD4; /* Cyan for profile picture */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            font-weight: bold;
+            margin: 0 auto 20px auto; /* Center profile picture */
+            border: 3px solid #00ACC1;
+            position: relative; /* For pencil icon */
+            overflow: hidden; /* Ensure content within stays */
+        }
+        
+        .profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block; /* Remove extra space below image */
+        }
+
+        /* Pencil icon for profile picture edit */
+        .profile-picture .edit-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border-radius: 50%;
+            padding: 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .profile-picture .edit-icon:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Avatar selection popup */
+        .avatar-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100; /* High z-index to be on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 450px; /* Adjusted max-width to accommodate more avatars */
+            text-align: center;
+            position: relative;
+        }
+
+        .avatar-modal-content h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+
+        .avatar-options {
+            display: flex;
+            flex-wrap: wrap; /* Allow avatars to wrap to the next line */
+            justify-content: center; /* Center avatars */
+            gap: 15px; /* Space between avatars */
+            margin-top: 20px;
+        }
+
+        .avatar-option {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #eee;
+            transition: border-color 0.3s ease;
+        }
+
+        .avatar-option.selected {
+            border-color: #4CAF50;
+        }
+
+        .avatar-option img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .avatar-modal-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .avatar-modal-actions button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: none;
+        }
+
+        .avatar-modal-actions .save-avatar-btn {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        .avatar-modal-actions .save-avatar-btn:hover {
+            background-color: #45a049;
+        }
+
+        .avatar-modal-actions .cancel-avatar-btn {
+            background-color: #f44336;
+            color: #fff;
+        }
+        .avatar-modal-actions .cancel-avatar-btn:hover {
+            background-color: #da190b;
+        }
+
+
+        .profile-username {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #4CAF50;
+            margin-bottom: 10px;
+            display: flex; /* For aligning username and tick */
+            justify-content: center; /* Center horizontally */
+            align-items: center;
+        }
+        
+        .profile-bio {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
+            word-wrap: break-word;
+            padding: 0 10px;
+            text-align: center;
+            position: relative; /* For edit icon positioning */
+        }
+
+        .profile-bio.editing {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .profile-bio-textarea {
+            width: calc(100% - 20px); /* Adjust for padding */
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .bio-edit-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .bio-edit-controls button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .bio-edit-controls .save-btn {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+        }
+        .bio-edit-controls .save-btn:hover {
+            background-color: #45a049;
+        }
+        .bio-edit-controls .cancel-btn {
+            background-color: #f44336;
+            color: #fff;
+            border: none;
+        }
+        .bio-edit-controls .cancel-btn:hover {
+            background-color: #da190b;
+        }
+        
+        /* Edit icon for bio */
+        .bio-edit-icon {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            cursor: pointer;
+            color: #888;
+            font-size: 0.9em;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .bio-edit-icon:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .profile-stats .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 1em;
+            color: #555;
+        }
+        .profile-stats .stat-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .profile-posts-section {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .profile-posts-section h2 {
+            color: #4CAF50;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .post-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+            position: relative; /* For the three-dot menu positioning */
+        }
+
+        .post-item .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #555;
+            justify-content: space-between; /* To push options menu to right */
+        }
+        .post-item .post-header .username-display { /* Added for username */
+            display: flex;
+            align-items: center;
+        }
+
+        .post-item .post-content {
+            font-size: 1em;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 10px; /* Space between content and actions/timestamp */
+        }
+        
+        /* Style for editable textarea */
+        .post-item .post-content.editing {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .post-item .post-actions {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            justify-content: space-around;
+            align-items: center; /* Vertically center items */
+            margin-top: 10px; /* Adjusted margin */
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .post-item .post-actions button {
+            background: none;
+            border: none;
+            color: #777;
+            font-size: 0.9em;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .post-item .post-actions button i {
+            margin-right: 5px;
+        }
+        .post-item .post-actions button:hover {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .post-item .post-actions button.liked {
+            color: #E91E63; /* Pink for liked */
+        }
+        .no-posts {
+            color: #777;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Timestamp at the bottom of the post */
+        .post-item .post-time-bottom {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 8px; /* Space above the timestamp */
+            text-align: right; /* Align timestamp to the right */
+            width: 100%; /* Take full width for alignment */
+            padding-right: 5px; /* Little padding from the edge */
+            box-sizing: border-box;
+        }
+
+        /* --- Three-dot menu styles --- */
+        .post-options-menu {
+            position: relative; /* Changed to relative to contain dropdown */
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px; /* Make it clickable */
+            height: 30px; /* Make it clickable */
+            margin-left: auto; /* Push to right */
+        }
+
+        .post-options-menu:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .post-options-menu svg {
+            width: 20px;
+            height: 20px;
+            fill: #777; /* Color of the dots */
+        }
+
+        /* Generic Dropdown for Posts and Settings */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            min-width: 120px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 10; /* Higher z-index to appear above other elements */
+            border-radius: 5px;
+            overflow: hidden; /* Ensure rounded corners for children */
+        }
+
+        /* Specific positioning for post dropdown */
+        .post-options-menu .dropdown-content {
+            right: 0; /* Align with the three dots */
+            top: 100%; /* Position below the three dots */
+            transform: translateY(5px); /* Little space below the menu icon */
+        }
+
+        /* Specific positioning for settings dropdown */
+        .settings-dropdown-content { /* New class for settings dropdown */
+            right: 0;
+            top: calc(100% + 10px); /* Position below the settings icon */
+            min-width: 180px; /* Wider for better text display */
+        }
+
+
+        .dropdown-content button {
+            color: black;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #eee; /* Separator */
+        }
+        .dropdown-content button:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-content button:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        /* Edit/Save/Cancel button styles */
+        .edit-controls {
+            display: flex;
+            justify-content: flex-end; /* Align to the right */
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .edit-controls button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .edit-controls .save-btn {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+        }
+        .edit-controls .save-btn:hover {
+            background-color: #45a049;
+        }
+        .edit-controls .cancel-btn {
+            background-color: #f44336;
+            color: #fff;
+            border: none;
+        }
+        .edit-controls .cancel-btn:hover {
+            background-color: #da190b;
+        }
+
+        /* Bottom Navigation Bar */
+        .footer {
+            width: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            padding: 15px 0;
+            color: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+        .footer .nav-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            font-size: 0.8em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .footer .nav-icon i { font-size: 1.5em; margin-bottom: 5px; }
+        .footer .nav-icon:hover { background-color: rgba(255, 255, 255, 0.2); }
+        .footer .nav-icon.active { color: #c8e6c9; }
+
+        /* Verified tick SVG styling (consistent with comments.html & search.html) */
+        .verified-tick {
+            width: 12px; /* Reduced from 16px */
+            height: 12px; /* Reduced from 16px */
+            vertical-align: middle;
+            margin-left: 2px; /* Reduced from 4px, closer to username */
+            fill: #4CAF50; /* Green color */
+        }
+
+        /* Message pop-up (for verification request feedback) */
+        .info-message {
+            position: fixed;
+            top: 75px; /* Below header */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 30; /* Above everything else */
+            display: none; /* Hidden by default */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-align: center;
+            white-space: nowrap;
+            max-width: 90%;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .info-message.show {
+            opacity: 1;
+            display: block;
+        }
+        .info-message.error {
+            background-color: #f44336;
+        }
+
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            body { padding-top: 70px; padding-bottom: 60px; }
+            .header { padding: 10px 15px; font-size: 1em; }
+            .header .user-info { font-size: 0.95em; }
+            .header .user-info i { font-size: 1.1em; }
+            /* Adjusted for new DM icon */
+            .header .dm-icon,
+            .header .settings-icon { font-size: 1.3em; }
+
+            .main-content { padding: 15px; }
+            .profile-card { padding: 20px; }
+            .profile-picture {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5em;
+                margin-bottom: 15px;
+            }
+            .profile-picture .edit-icon {
+                padding: 6px;
+                font-size: 0.7em;
+            }
+            .avatar-modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            .avatar-options {
+                gap: 10px; /* Reduce gap on smaller screens */
+            }
+            .avatar-option img {
+                width: 60px;
+                height: 60px;
+            }
+            .profile-username { font-size: 1.5em; }
+            .profile-bio { font-size: 0.9em; padding: 0 5px; }
+            .profile-bio-textarea { width: calc(100% - 10px); }
+            .bio-edit-icon { top: -5px; right: 0px; font-size: 0.8em;}
+            .profile-stats { margin-top: 15px; padding-top: 10px; }
+            .profile-stats .stat-item { font-size: 0.9em; }
+            .profile-stats .stat-value { font-size: 1.1em; }
+
+            .profile-posts-section { padding: 15px; }
+            .profile-posts-section h2 { font-size: 1.5em; margin-bottom: 15px; }
+            .post-item { padding: 12px; margin-bottom: 10px; }
+            .post-item .post-content { font-size: 0.95em; }
+            .post-item .post-actions button { font-size: 0.8em; padding: 6px 8px; }
+            .post-options-menu { top: 5px; right: 5px; width: 25px; height: 25px; }
+            .post-options-menu svg { width: 18px; height: 18px; }
+            .dropdown-content { min-width: 100px; right: 5px; top: 35px; }
+            .dropdown-content button { padding: 8px 10px; font-size: 0.8em; }
+
+            .settings-dropdown-content { /* Specific positioning for settings dropdown on mobile */
+                min-width: 160px;
+                right: 0;
+                top: calc(100% + 5px);
+            }
+
+            .footer { padding: 10px 0; }
+            .footer .nav-icon { font-size: 0.7em; }
+            .footer .nav-icon i { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="user-info">
+            <i class="fas fa-user-circle"></i> <span id="usernameDisplay">Loading...</span>
+            <span id="headerVerifiedTickContainer"></span>
+        </div>
+        <div class="user-actions">
+            <i class="fas fa-comment-dots dm-icon" id="dmIcon" title="Direct Messages"></i>
+            <i class="fas fa-cog settings-icon" id="settingsIcon" title="Settings"></i>
+            <div class="dropdown-content settings-dropdown-content" id="settingsDropdown">
+                <button id="requestVerificationBtn">Request for Verification</button>
+                <button id="accountInfoBtn">Account Information</button>
+                <button id="logoutBtn">Logout</button> </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="profile-card">
+            <div class="profile-picture" id="profilePicture">
+                <i class="fas fa-pencil-alt edit-icon" id="editAvatarIcon" title="Change Avatar"></i>
+            </div>
+            <div class="profile-username">
+                <span id="profileUsername">Loading...</span>
+                <span id="profileVerifiedTickContainer"></span>
+            </div>
+            <div class="profile-bio" id="profileBio">
+                <span id="bioText">Tell us about yourself...</span>
+                <i class="fas fa-edit bio-edit-icon" id="bioEditIcon" title="Edit Bio"></i>
+            </div>
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="postsCount">0</span>
+                    <span>Posts</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="followersCount">0</span>
+                    <span>Followers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="followingCount">0</span>
+                    <span>Following</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-posts-section">
+            <h2>My Posts</h2>
+            <div id="userPostsList">
+                <p class="no-posts">Loading your posts...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="nav-icon" id="homeIcon">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-icon" id="requestsIcon">
+            <i class="fas fa-bell"></i>
+            <span>Requests</span>
+        </div>
+        <div class="nav-icon" id="plusIcon">
+            <i class="fas fa-plus-circle"></i>
+            <span>Add</span>
+        </div>
+        <div class="nav-icon" id="searchIcon">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </div>
+        <div class="nav-icon active" id="profileIcon">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </div>
+    </div>
+
+    <div id="infoMessage" class="info-message"></div>
+
+    <div id="avatarModal" class="avatar-modal">
+        <div class="avatar-modal-content">
+            <h3>Choose Your Avatar</h3>
+            <div class="avatar-options">
+                <div class="avatar-option" data-avatar="Man.svg">
+                    <img src="Man.svg" alt="Man Avatar">
+                </div>
+                <div class="avatar-option" data-avatar="Women.svg">
+                    <img src="Women.svg" alt="Woman Avatar">
+                </div>
+                <div class="avatar-option" data-avatar="maleemploye.svg">
+                    <img src="maleemploye.svg" alt="Male Employee Avatar">
+                </div>
+                <div class="avatar-option" data-avatar="girlemploye.svg">
+                    <img src="girlemploye.svg" alt="Girl Employee Avatar">
+                </div>
+                </div>
+            <div class="avatar-modal-actions">
+                <button class="save-avatar-btn">Save Avatar</button>
+                <button class="cancel-avatar-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Initialize Firebase with your actual config
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc",
+            authDomain: "citas-bd0a3.firebaseapp.com",
+            databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com",
+            projectId: "citas-bd0a3",
+            storageBucket: "citas-bd0a3.firebasestorage.app",
+            messagingSenderId: "1082213903517",
+            appId: "1:1082213903517:web:22409e051e5442f37ef874",
+            measurementId: "G-TXKMGDLMVB"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null; // To store the currently logged-in user's data
+        let currentUsername = "User"; // To store the current user's username
+        let currentUserData = null; // To store the full user document data
+        let selectedAvatar = null; // To temporarily store the selected avatar in the modal
+
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const headerVerifiedTickContainer = document.getElementById('headerVerifiedTickContainer');
+        const dmIcon = document.getElementById('dmIcon');
+        const settingsIcon = document.getElementById('settingsIcon'); // New: Settings Icon
+        const settingsDropdown = document.getElementById('settingsDropdown'); // New: Settings Dropdown
+        const requestVerificationBtn = document.getElementById('requestVerificationBtn'); // New: Request Verification Button
+        const accountInfoBtn = document.getElementById('accountInfoBtn'); // New: Account Info Button
+        const logoutBtn = document.getElementById('logoutBtn'); // Logout Button (moved to dropdown)
+
+        const profilePictureDiv = document.getElementById('profilePicture');
+        const editAvatarIcon = document.getElementById('editAvatarIcon'); // New: Avatar edit icon
+        const profileUsernameSpan = document.getElementById('profileUsername');
+        const profileVerifiedTickContainer = document.getElementById('profileVerifiedTickContainer');
+        const profileBioDiv = document.getElementById('profileBio'); // New: Bio container
+        const bioTextSpan = document.getElementById('bioText'); // New: Bio text element
+        const bioEditIcon = document.getElementById('bioEditIcon'); // New: Bio edit icon
+        const postsCountSpan = document.getElementById('postsCount');
+        const followersCountSpan = document.getElementById('followersCount');
+        const followingCountSpan = document.getElementById('followingCount');
+        const userPostsListDiv = document.getElementById('userPostsList');
+        const infoMessage = document.getElementById('infoMessage'); // New: Info Message element
+        
+        // Avatar Modal Elements
+        const avatarModal = document.getElementById('avatarModal');
+        // Select all avatar options again to include new ones
+        const avatarOptions = document.querySelectorAll('.avatar-option'); 
+        const saveAvatarBtn = document.querySelector('.save-avatar-btn');
+        const cancelAvatarBtn = document.querySelector('.cancel-avatar-btn');
+
+
+        // Bottom Navigation Icons
+        const homeIcon = document.getElementById('homeIcon');
+        const requestsIcon = document.getElementById('requestsIcon');
+        const plusIcon = document.getElementById('plusIcon');
+        const searchIcon = document.getElementById('searchIcon');
+        const profileIcon = document.getElementById('profileIcon');
+
+        // SVG for the green tick (consistent with comments.html & search.html)
+        const verifiedTickSvg = `
+            <svg class="verified-tick" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+        const verifiedTickSvgHeader = `
+            <svg class="verified-tick-header" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+
+        // SVG for the three dots (kebab menu)
+        const threeDotsSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512">
+                <path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zM120 96c0 30.9-25.1 56-56 56s-56-25.1-56-56S33.1 40 64 40s56 25.1 56 56z"/>
+            </svg>
+        `;
+
+        // --- Event Listeners for Header Actions ---
+        logoutBtn.addEventListener('click', async () => { // Logout moved to settings dropdown
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html'; // Redirect to login page after logout
+            } catch (error) {
+                console.error("Error signing out:", error.message);
+                showMessage("Error logging out. Please try again.", 'error');
+            }
+        });
+
+        dmIcon.addEventListener('click', () => {
+            window.location.href = 'dm.html'; // Redirect to dm.html
+        });
+
+        settingsIcon.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent click from closing other menus immediately
+            toggleDropdown(settingsDropdown); // Toggle the settings dropdown
+        });
+
+        requestVerificationBtn.addEventListener('click', async () => {
+            if (!currentUserData) {
+                showMessage("User data not loaded yet.", 'error');
+                return;
+            }
+
+            // Close the dropdown immediately
+            settingsDropdown.classList.remove('show');
+
+            if (currentUserData.isVerified) {
+                showMessage("You are already a verified user!", 'success');
+                return;
+            }
+
+            if (currentUserData.verificationRequested) {
+                showMessage("Your verification request is already pending.", 'info');
+                return;
+            }
+
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    verificationRequested: true,
+                    requestedAt: firebase.firestore.FieldValue.serverTimestamp() // Timestamp the request
+                });
+                showMessage("Verification request sent successfully! Please wait for admin review.", 'success');
+                // Optimistically update local data to reflect request sent
+                currentUserData.verificationRequested = true; 
+            } catch (error) {
+                console.error("Error sending verification request:", error);
+                showMessage("Failed to send verification request. Please try again.", 'error');
+            }
+        });
+
+        accountInfoBtn.addEventListener('click', () => {
+            settingsDropdown.classList.remove('show'); // Close the dropdown
+            window.location.href = 'account.html'; // Redirect to account.html
+        });
+
+        // --- Auth State Observer ---
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("User is logged in:", user.email, "UID:", user.uid);
+                await loadUserProfile(currentUser.uid); // Load user's own profile
+                await loadUserPosts(currentUser.uid); // Load user's own posts
+
+            } else {
+                console.log("No user logged in. Redirecting to index.html");
+                window.location.href = 'index.html';
+            }
+        });
+
+        // --- Load User Profile Data (Username, Verification, Counts, Bio, Avatar) ---
+        async function loadUserProfile(userId) {
+            try {
+                // Use onSnapshot to listen for real-time updates to user data
+                db.collection('users').doc(userId).onSnapshot(async (userDoc) => {
+                    if (userDoc.exists) {
+                        currentUserData = userDoc.data(); // Store the full user data
+                        currentUsername = currentUserData.username || "User";
+                        usernameDisplay.textContent = currentUsername;
+                        profileUsernameSpan.textContent = currentUsername;
+
+                        // Set avatar
+                        const avatarPath = currentUserData.avatar || ''; // Get avatar path from Firestore
+                        updateProfilePicture(avatarPath);
+                        
+                        // Update bio
+                        const userBio = currentUserData.bio || "Tell us about yourself...";
+                        bioTextSpan.textContent = userBio;
+
+                        if (currentUserData.isVerified) {
+                            headerVerifiedTickContainer.innerHTML = verifiedTickSvgHeader;
+                            profileVerifiedTickContainer.innerHTML = verifiedTickSvg;
+                        } else {
+                            headerVerifiedTickContainer.innerHTML = '';
+                            profileVerifiedTickContainer.innerHTML = '';
+                        }
+
+                        // Update counts (posts count is handled by the post listener)
+                        postsCountSpan.textContent = "Loading..."; // Will be updated by loadUserPosts
+                        followersCountSpan.textContent = (currentUserData.followers && currentUserData.followers.length) || 0;
+                        followingCountSpan.textContent = (currentUserData.following && currentUserData.following.length) || 0;
+
+                    } else {
+                        usernameDisplay.textContent = "User";
+                        // Re-add pencil icon after profile picture fallback for consistency
+                        profilePictureDiv.innerHTML = "U" + `<i class="fas fa-pencil-alt edit-icon" id="editAvatarIcon" title="Change Avatar"></i>`; 
+                        profileUsernameSpan.textContent = "User Not Found";
+                        bioTextSpan.textContent = "Error loading bio...";
+                        headerVerifiedTickContainer.innerHTML = '';
+                        profileVerifiedTickContainer.innerHTML = '';
+                        console.error("User document not found for:", userId);
+                    }
+                }, (error) => {
+                    console.error("Error listening to user profile:", error);
+                    usernameDisplay.textContent = "Error";
+                    // Re-add pencil icon after profile picture fallback for consistency
+                    profilePictureDiv.innerHTML = "?" + `<i class="fas fa-pencil-alt edit-icon" id="editAvatarIcon" title="Change Avatar"></i>`; 
+                    profileUsernameSpan.textContent = "Error Loading Profile";
+                    bioTextSpan.textContent = "Error loading bio...";
+                    postsCountSpan.textContent = "N/A";
+                    followersCountSpan.textContent = "N/A";
+                    followingCountSpan.textContent = "N/A";
+                });
+            } catch (error) {
+                console.error("Error setting up user profile listener:", error);
+            }
+        }
+
+        // Function to update the profile picture display
+        function updateProfilePicture(avatarPath) {
+            profilePictureDiv.innerHTML = ''; // Clear existing content
+            if (avatarPath) {
+                const img = document.createElement('img');
+                img.src = avatarPath;
+                img.alt = "Profile Avatar";
+                profilePictureDiv.appendChild(img);
+            } else {
+                const firstLetter = currentUsername.charAt(0).toUpperCase();
+                profilePictureDiv.textContent = firstLetter;
+            }
+            // Always re-add the edit icon, but only once if it already exists
+            let existingEditIcon = profilePictureDiv.querySelector('#editAvatarIcon');
+            if (!existingEditIcon) {
+                const editIcon = document.createElement('i');
+                editIcon.classList.add('fas', 'fa-pencil-alt', 'edit-icon');
+                editIcon.id = 'editAvatarIcon';
+                editIcon.title = 'Change Avatar';
+                profilePictureDiv.appendChild(editIcon);
+                editIcon.addEventListener('click', showAvatarModal); // Attach event listener only once
+            } else {
+                // If it exists, ensure its event listener is active (though onSnapshot should handle this generally)
+                existingEditIcon.removeEventListener('click', showAvatarModal);
+                existingEditIcon.addEventListener('click', showAvatarModal);
+            }
+        }
+
+        // --- Handle Avatar Edit ---
+        // Ensure this listener is attached only once on initial load, and managed by updateProfilePicture
+        if (editAvatarIcon) { // Check if element exists before attaching
+            editAvatarIcon.addEventListener('click', showAvatarModal);
+        }
+
+
+        function showAvatarModal() {
+            avatarModal.style.display = 'flex'; // Show the modal
+            // Reset selected avatar state and highlight current
+            avatarOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (currentUserData && currentUserData.avatar === option.dataset.avatar) {
+                    option.classList.add('selected');
+                    selectedAvatar = option.dataset.avatar; // Set selectedAvatar to current user's avatar
+                }
+            });
+             // If no avatar is currently set, make sure selectedAvatar is null
+             if (!currentUserData || !currentUserData.avatar) {
+                selectedAvatar = null;
+            }
+        }
+
+        avatarOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                avatarOptions.forEach(opt => opt.classList.remove('selected')); // Deselect all
+                option.classList.add('selected'); // Select current
+                selectedAvatar = option.dataset.avatar; // Store selected avatar path
+            });
+        });
+
+        saveAvatarBtn.addEventListener('click', async () => {
+            if (selectedAvatar && currentUser) {
+                try {
+                    await db.collection('users').doc(currentUser.uid).update({
+                        avatar: selectedAvatar
+                    });
+                    showMessage('Avatar updated successfully!', 'success');
+                    avatarModal.style.display = 'none'; // Hide modal
+                } catch (error) {
+                    console.error('Error updating avatar:', error);
+                    showMessage('Failed to update avatar.', 'error');
+                }
+            } else {
+                showMessage('Please select an avatar to save.', 'info'); // Updated message
+            }
+        });
+
+        cancelAvatarBtn.addEventListener('click', () => {
+            avatarModal.style.display = 'none'; // Hide modal
+            selectedAvatar = null; // Clear selected avatar
+        });
+
+        // Close modal if clicked outside content
+        window.addEventListener('click', (event) => {
+            if (event.target == avatarModal) {
+                avatarModal.style.display = 'none';
+                selectedAvatar = null;
+            }
+        });
+
+        // --- Handle Bio Edit ---
+        bioEditIcon.addEventListener('click', () => {
+            const currentBio = bioTextSpan.textContent === "Tell us about yourself..." ? "" : bioTextSpan.textContent;
+            const originalBio = currentBio; // Store original bio for cancel
+
+            // Replace bio text with textarea
+            const textarea = document.createElement('textarea');
+            textarea.classList.add('profile-bio-textarea');
+            textarea.value = currentBio;
+            bioTextSpan.replaceWith(textarea);
+            bioEditIcon.style.display = 'none'; // Hide edit icon
+
+            // Add save and cancel buttons
+            const bioEditControls = document.createElement('div');
+            bioEditControls.classList.add('bio-edit-controls');
+            bioEditControls.innerHTML = `
+                <button class="save-btn">Save</button>
+                <button class="cancel-btn">Cancel</button>
+            `;
+            profileBioDiv.classList.add('editing'); // Add editing class to parent
+            profileBioDiv.appendChild(bioEditControls);
+
+            // Event listener for Save button
+            bioEditControls.querySelector('.save-btn').addEventListener('click', async () => {
+                const newBio = textarea.value.trim();
+                if (newBio !== originalBio) {
+                    try {
+                        await db.collection('users').doc(currentUser.uid).update({
+                            bio: newBio
+                        });
+                        showMessage('Bio updated successfully!', 'success');
+                    } catch (error) {
+                        console.error('Error updating bio:', error);
+                        showMessage('Failed to update bio.', 'error');
+                    }
+                }
+                revertBioToDisplayMode(newBio || "Tell us about yourself..."); // Use newBio or default
+            });
+
+            // Event listener for Cancel button
+            bioEditControls.querySelector('.cancel-btn').addEventListener('click', () => {
+                revertBioToDisplayMode(originalBio || "Tell us about yourself..."); // Revert to original bio
+            });
+        });
+
+        // Helper function to revert bio back to display mode
+        function revertBioToDisplayMode(bioContent) {
+            const textarea = profileBioDiv.querySelector('.profile-bio-textarea');
+            const bioEditControls = profileBioDiv.querySelector('.bio-edit-controls');
+
+            if (textarea) textarea.replaceWith(bioTextSpan);
+            if (bioEditControls) bioEditControls.remove();
+
+            bioTextSpan.textContent = bioContent;
+            bioEditIcon.style.display = ''; // Show edit icon again
+            profileBioDiv.classList.remove('editing'); // Remove editing class
+        }
+
+
+        // Helper function to check if user liked a post
+        function isUserLikedPost(postLikesArray, userId) {
+            return postLikesArray && Array.isArray(postLikesArray) && postLikesArray.includes(userId);
+        }
+
+        // --- Load User's Own Posts ---
+        async function loadUserPosts(userId) {
+            userPostsListDiv.innerHTML = '<p class="no-posts">Loading your posts...</p>';
+            console.log("Attempting to load posts for userId:", userId);
+
+            try {
+                db.collection('posts')
+                    .where('userId', '==', userId)
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot(snapshot => { // Use onSnapshot for real-time updates
+                        userPostsListDiv.innerHTML = ''; // Clear existing posts
+
+                        if (snapshot.empty) {
+                            console.log("No posts found for userId:", userId);
+                            userPostsListDiv.innerHTML = '<p class="no-posts">You haven\'t made any posts yet.</p>';
+                            postsCountSpan.textContent = 0; // Update posts count
+                            return;
+                        }
+
+                        console.log("Found", snapshot.size, "posts for userId:", userId);
+                        postsCountSpan.textContent = snapshot.size; // Update posts count
+
+                        snapshot.forEach(doc => {
+                            const postData = doc.data();
+                            const postId = doc.id;
+                            const content = postData.content;
+                            // *** NEW: Get image URL if it exists ***
+                            const imageUrl = postData.imageUrl || null; // Assuming your post documents have an 'imageUrl' field
+                            
+                            const timestamp = postData.timestamp && typeof postData.timestamp.toDate === 'function' 
+                                              ? postData.timestamp.toDate() 
+                                              : new Date();
+
+                            const likesArray = postData.likes || [];
+                            const likesCount = likesArray.length;
+                            const commentsCount = postData.commentsCount || 0; 
+                            
+                            const likedByCurrentUser = isUserLikedPost(likesArray, currentUser.uid);
+
+                            const postElement = document.createElement('div');
+                            postElement.classList.add('post-item');
+                            postElement.setAttribute('data-postid', postId);
+
+                            // *** NEW: Add image HTML if imageUrl exists ***
+                            const imageHtml = imageUrl ? `<img src="${imageUrl}" alt="Post Image" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px;">` : '';
+
+                            postElement.innerHTML = `
+                                <div class="post-header">
+                                    <span class="username-display">My Post</span>
+                                    <div class="post-options-menu">
+                                        ${threeDotsSvg}
+                                        <div class="dropdown-content">
+                                            <button class="edit-post-btn" data-postid="${postId}">Edit Post</button>
+                                            <button class="delete-post-btn" data-postid="${postId}">Delete Post</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="post-content">${content}</p>
+                                ${imageHtml} <div class="post-actions">
+                                    <button class="like-btn ${likedByCurrentUser ? 'liked' : ''}" data-postid="${postId}" data-liked="${likedByCurrentUser ? 'true' : 'false'}">
+                                        <i class="${likedByCurrentUser ? 'fas fa-heart' : 'far fa-heart'}"></i>
+                                        <span>${likesCount}</span>
+                                    </button>
+                                    <button class="comment-btn" data-postid="${postId}">
+                                        <i class="far fa-comment"></i>
+                                        <span>${commentsCount}</span>
+                                    </button>
+                                    <button class="share-btn">
+                                        <i class="fas fa-share-alt"></i>
+                                        <span>Share</span>
+                                    </button>
+                                </div>
+                                <div class="post-time-bottom">${formatTimestamp(timestamp)}</div>
+                            `;
+                            userPostsListDiv.appendChild(postElement);
+                        });
+
+                        // Re-add event listeners for all dynamically created elements
+                        userPostsListDiv.querySelectorAll('.like-btn').forEach(button => {
+                            button.addEventListener('click', handleLikePost);
+                        });
+                        userPostsListDiv.querySelectorAll('.comment-btn').forEach(button => {
+                            button.addEventListener('click', handleCommentClick);
+                        });
+                        userPostsListDiv.querySelectorAll('.post-options-menu').forEach(menu => {
+                            menu.addEventListener('click', (event) => toggleDropdown(event.currentTarget.querySelector('.dropdown-content'), event));
+                        });
+                        userPostsListDiv.querySelectorAll('.edit-post-btn').forEach(button => {
+                            button.addEventListener('click', handleEditPost);
+                        });
+                        userPostsListDiv.querySelectorAll('.delete-post-btn').forEach(button => {
+                            button.addEventListener('click', handleDeletePost);
+                        });
+
+                    }, error => {
+                        console.error("Error listening to user posts:", error);
+                        userPostsListDiv.innerHTML = `<p class="no-posts error">Error loading your posts. Please check your internet connection or Firebase setup. Details: ${error.message}</p>`;
+                    });
+
+            } catch (error) {
+                console.error("Error setting up post listener:", error);
+                userPostsListDiv.innerHTML = `<p class="no-posts error">Error setting up post listener. Details: ${error.message}</p>`;
+            }
+        }
+
+        // --- Toggle Dropdown Menu (Universal Function) ---
+        function toggleDropdown(dropdownElement, event = null) {
+            if (event) {
+                event.stopPropagation(); // Prevent click from closing other menus immediately
+            }
+            
+            // Close any other open dropdowns except the current one
+            document.querySelectorAll('.dropdown-content.show').forEach(openDropdown => {
+                if (openDropdown !== dropdownElement) {
+                    openDropdown.classList.remove('show');
+                }
+            });
+
+            dropdownElement.classList.toggle('show');
+        }
+
+        // Close all dropdowns if clicked outside
+        window.addEventListener('click', (event) => {
+            // Check if the click is outside any .dropdown-content or its parent menu
+            if (!event.target.closest('.dropdown-content') && !event.target.closest('.post-options-menu') && !event.target.closest('.settings-icon')) {
+                document.querySelectorAll('.dropdown-content.show').forEach(openDropdown => {
+                    openDropdown.classList.remove('show');
+                });
+            }
+        });
+
+
+        // --- Handle Edit Post (In-Page) ---
+        function handleEditPost(event) {
+            event.stopPropagation();
+            const postId = event.currentTarget.dataset.postid;
+            const postItem = document.querySelector(`.post-item[data-postid="${postId}"]`);
+            if (!postItem) return;
+
+            const postContentElement = postItem.querySelector('.post-content');
+            const originalContent = postContentElement.textContent;
+
+            const dropdown = postItem.querySelector('.dropdown-content');
+            if (dropdown) dropdown.classList.remove('show');
+
+            const textarea = document.createElement('textarea');
+            textarea.classList.add('post-content', 'editing');
+            textarea.value = originalContent;
+            postContentElement.replaceWith(textarea);
+
+            const optionsMenu = postItem.querySelector('.post-options-menu');
+            optionsMenu.style.display = 'none';
+
+            const postActionsDiv = postItem.querySelector('.post-actions');
+            const editControls = document.createElement('div');
+            editControls.classList.add('edit-controls');
+            editControls.innerHTML = `
+                <button class="save-btn" data-postid="${postId}">Save</button>
+                <button class="cancel-btn" data-original-content="${originalContent}">Cancel</button>
+            `;
+            postActionsDiv.insertAdjacentElement('beforebegin', editControls);
+
+
+            // Add event listeners for new buttons
+            editControls.querySelector('.save-btn').addEventListener('click', async (e) => {
+                const newContent = textarea.value.trim();
+                if (newContent !== originalContent) {
+                    try {
+                        await db.collection('posts').doc(postId).update({
+                            content: newContent
+                        });
+                        showMessage('Post updated successfully!', 'success');
+                    } catch (error) {
+                        console.error('Error updating post:', error);
+                        showMessage('Failed to update post.', 'error');
+                    }
+                }
+                revertPostToDisplayMode(postItem, newContent || originalContent);
+            });
+
+            editControls.querySelector('.cancel-btn').addEventListener('click', (e) => {
+                const original = e.currentTarget.dataset.originalContent;
+                revertPostToDisplayMode(postItem, original);
+            });
+        }
+
+        // Helper function to revert post back to display mode
+        function revertPostToDisplayMode(postItem, contentToDisplay) {
+            const textarea = postItem.querySelector('textarea.post-content.editing');
+            const postContentElement = document.createElement('p');
+            postContentElement.classList.add('post-content');
+            postContentElement.textContent = contentToDisplay;
+            textarea.replaceWith(postContentElement);
+
+            const editControls = postItem.querySelector('.edit-controls');
+            if (editControls) {
+                editControls.remove();
+            }
+
+            const optionsMenu = postItem.querySelector('.post-options-menu');
+            if (optionsMenu) {
+                optionsMenu.style.display = '';
+            }
+        }
+
+
+        // --- Handle Delete Post ---
+        async function handleDeletePost(event) {
+            event.stopPropagation();
+            const postId = event.currentTarget.dataset.postid;
+
+            const postItem = document.querySelector(`.post-item[data-postid="${postId}"]`);
+            const dropdown = postItem.querySelector('.dropdown-content');
+            if (dropdown) dropdown.classList.remove('show');
+
+            if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+                try {
+                    await db.collection('posts').doc(postId).delete();
+                    console.log("Post successfully deleted:", postId);
+                    showMessage("Post deleted successfully!", 'success');
+                }
+                catch (error) {
+                    console.error("Error deleting post:", error);
+                    showMessage("Error deleting post. Please try again.", 'error');
+                }
+            }
+        }
+
+        // --- Handle Like Post ---
+        async function handleLikePost(event) {
+            const button = event.currentTarget;
+            const postId = button.dataset.postid;
+            let isLiked = button.dataset.liked === 'true';
+
+            if (!currentUser) {
+                showMessage('You must be logged in to like posts.', 'error');
+                return;
+            }
+
+            button.disabled = true;
+
+            const postRef = db.collection('posts').doc(postId);
+            const userId = currentUser.uid;
+
+            try {
+                if (isLiked) {
+                    await postRef.update({
+                        likes: firebase.firestore.FieldValue.arrayRemove(userId)
+                    });
+                    button.classList.remove('liked');
+                    button.querySelector('i').classList.replace('fas', 'far');
+                    button.dataset.liked = 'false';
+                    isLiked = false;
+                } else {
+                    await postRef.update({
+                        likes: firebase.firestore.FieldValue.arrayUnion(userId)
+                    });
+                    button.classList.add('liked');
+                    button.querySelector('i').classList.replace('far', 'fas');
+                    button.dataset.liked = 'true';
+                    isLiked = true;
+                }
+                
+                const currentCount = parseInt(button.querySelector('span').textContent);
+                button.querySelector('span').textContent = isLiked ? currentCount + 1 : currentCount - 1;
+
+            } catch (error) {
+                console.error("Error liking/unliking post:", error);
+                showMessage('Failed to update like status. Please try again.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // --- Handle Comment Click ---
+        function handleCommentClick(event) {
+            const postId = event.currentTarget.dataset.postid;
+            window.location.href = `comments.html?postId=${postId}`;
+        }
+
+        // Helper function to format timestamp
+        function formatTimestamp(date) {
+            const now = new Date();
+            const diffSeconds = Math.floor((now - date) / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffSeconds < 60) {
+                return "just now";
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes}m ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours}h ago`;
+            } else if (diffDays < 7) {
+                return `${diffDays}d ago`;
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+        }
+
+        // --- Info Message Display Function ---
+        let messageTimeout;
+        function showMessage(msg, type) {
+            clearTimeout(messageTimeout); // Clear any existing timeout
+            infoMessage.textContent = msg;
+            infoMessage.className = `info-message show ${type}`; // Add type for styling (success/error/info)
+
+            messageTimeout = setTimeout(() => {
+                infoMessage.classList.remove('show');
+                // Optional: Clear text content after transition for accessibility
+                // infoMessage.textContent = ''; 
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+
+        // --- Bottom Nav Icon Click Handlers ---
+        homeIcon.addEventListener('click', () => {
+            window.location.href = 'home.html';
+        });
+        requestsIcon.addEventListener('click', () => {
+            window.location.href = 'requests.html';
+        });
+        plusIcon.addEventListener('click', () => {
+            window.location.href = 'post.html';
+        });
+        searchIcon.addEventListener('click', () => {
+            window.location.href = 'search.html';
+        });
+        profileIcon.addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // Set the active icon on page load based on current page
+        document.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname.split('/').pop();
+            if (path === 'home.html' || path === '') {
+                updateActiveNavIcon(homeIcon);
+            } else if (path === 'requests.html') {
+                updateActiveNavIcon(requestsIcon);
+            } else if (path === 'post.html') {
+                updateActiveNavIcon(plusIcon);
+            } else if (path === 'search.html') {
+                updateActiveNavIcon(searchIcon);
+            } else if (path === 'profile.html') {
+                updateActiveNavIcon(profileIcon);
+            }
+        });
+
+        // Helper function to update active icon
+        function updateActiveNavIcon(clickedIcon) {
+            const allNavIcons = document.querySelectorAll('.footer .nav-icon');
+            allNavIcons.forEach(icon => {
+                icon.classList.remove('active');
+            });
+            clickedIcon.classList.add('active');
+        }
+    </script>
+</body>
+</html>

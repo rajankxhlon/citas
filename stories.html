@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stories - My Social App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            width: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            padding: 15px 20px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+        .header .left-section {
+            display: flex;
+            align-items: center;
+        }
+        .header .back-arrow {
+            font-size: 1.8em;
+            margin-right: 15px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        .header .back-arrow:hover {
+            opacity: 0.8;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            font-weight: 500;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            margin-top: 70px; /* Space for the fixed header */
+            margin-bottom: 70px; /* Space for the fixed footer */
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 800px; /* Wider for stories */
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .my-story-section, .friends-stories-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .my-story-section h3, .friends-stories-section h3 {
+            color: #4CAF50;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .my-story-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .add-story-prompt {
+            color: #555;
+            font-style: italic;
+        }
+
+        .add-story-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Hidden file input */
+        .my-story-section input[type="file"] {
+            display: none; 
+        }
+
+        /* Style for the stories SVG icon for upload */
+        .stories-upload-icon {
+            width: 50px; /* Adjust size as needed */
+            height: 50px;
+            fill: #4CAF50; /* Green color for the icon */
+            cursor: pointer;
+            transition: fill 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+            border-radius: 50%; /* Make it round if it's a solid icon */
+            padding: 5px; /* Add some padding around the icon if desired */
+        }
+
+        .stories-upload-icon:hover {
+            fill: #2196F3; /* Change color on hover */
+            transform: scale(1.05);
+        }
+
+        #myStoryPreviewContainer {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: none; /* Hidden by default */
+            margin-bottom: 10px;
+        }
+
+        #myStoryPreview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #deleteStoryBtn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+        #deleteStoryBtn:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Styles for story view count and icon */
+        .story-view-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            color: #555;
+            font-size: 0.9em;
+            cursor: pointer; /* Indicate it's clickable */
+            transition: color 0.3s ease;
+        }
+        .story-view-info:hover {
+            color: #2196F3;
+        }
+        .story-view-info .eye-icon {
+            margin-right: 5px;
+            font-size: 1.2em;
+        }
+
+        .upload-story-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-story-btn:hover {
+            background-color: #1976D2;
+        }
+
+        .upload-story-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading-message {
+            margin-top: 10px;
+            color: #555;
+            font-style: italic;
+        }
+
+        /* Styles for story text input */
+        #myStoryTextInput {
+            width: 80%;
+            max-width: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1em;
+            resize: vertical; /* Allow vertical resizing */
+            min-height: 50px;
+            box-sizing: border-box;
+        }
+
+        /* Friends' Stories Display */
+        #friendsStoriesContainer {
+            display: flex;
+            flex-wrap: wrap; /* Allow stories to wrap to next line */
+            gap: 25px 15px; /* Vertical gap, Horizontal gap */
+            justify-content: center; /* Center stories if they don't fill the row */
+        }
+
+        /* Styles for the individual friend story item */
+        .friend-story-item {
+            display: flex;
+            flex-direction: column; /* Stack avatar/username and circle */
+            align-items: center;
+            cursor: pointer;
+            text-decoration: none; /* Remove underline for links */
+            color: inherit; /* Inherit text color */
+            transition: transform 0.2s ease;
+        }
+
+        .friend-story-item:hover {
+            transform: translateY(-5px); /* Slight lift on hover */
+        }
+
+        .story-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: #eee; /* Placeholder background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #555;
+            overflow: hidden; /* Important for clipping image */
+            border: 3px solid #4CAF50; /* Green border for active story */
+            position: relative;
+            flex-shrink: 0; /* Prevent shrinking on small screens */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: border-color 0.2s ease;
+            margin-bottom: 5px; /* Space between circle and username */
+        }
+
+        .story-circle:hover {
+            border-color: #2196F3; /* Blue border on hover */
+        }
+
+        .story-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .friend-story-info {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center username and tick */
+            white-space: nowrap;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+            max-width: 80px; /* Limit width to prevent overflow */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis if text is too long */
+        }
+
+        .friend-story-info .username {
+            font-weight: 500; /* Make username slightly bolder */
+            margin-right: 3px; /* Space for tick */
+        }
+
+        /* Verified tick for friends' stories list */
+        .verified-tick-friend-list {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            fill: #4CAF50; /* Green for story list */
+        }
+
+        .no-stories {
+            text-align: center;
+            color: #777;
+            font-style: italic;
+            width: 100%; /* Take full width to center text */
+        }
+
+        /* Story Viewer Modal - FULL SCREEN CHANGES */
+        .story-modal {
+            display: none; 
+            position: fixed;
+            z-index: 100; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,1); 
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0; 
+            overflow: hidden; 
+        }
+
+        .story-modal-content {
+            position: relative;
+            background-color: #000; 
+            margin: 0; 
+            padding: 0;
+            border-radius: 0; 
+            width: 100%; 
+            height: 100%; 
+            max-width: none; 
+            max-height: none; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        .modal-header {
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 101; 
+            border-top-left-radius: 0; 
+            border-top-right-radius: 0; 
+        }
+        .modal-header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        .modal-header .profile-circle-small {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #2196F3;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-right: 8px;
+            overflow: hidden;
+        }
+        .modal-header .profile-circle-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .modal-header .username {
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        .modal-header .story-time {
+            font-size: 0.8em;
+            color: #ddd;
+        }
+        .modal-header .verified-tick-modal {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin-left: 2px;
+            fill: #fff; 
+        }
+
+        .story-image {
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            border-radius: 0; 
+            margin-top: 0; 
+        }
+        /* Styles for story text overlay */
+        .story-text-overlay {
+            position: absolute;
+            bottom: 0; 
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.6); 
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.1em;
+            z-index: 101; 
+            box-sizing: border-box;
+            max-height: 50%; 
+            overflow-y: auto; 
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        .close-button {
+            color: white;
+            font-size: 2.5em;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute; 
+            right: 15px;
+            top: 5px;
+            line-height: 1; 
+            z-index: 102; 
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+
+        /* Progress Bar for Stories */
+        .story-progress-container {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255,255,255,0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            gap: 2px;
+            z-index: 101;
+        }
+        .story-progress-bar {
+            flex-grow: 1;
+            height: 100%;
+            background-color: #fff;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.1s linear; 
+        }
+
+        /* Bottom Navigation Bar (Footer) */
+        .footer {
+            width: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            padding: 15px 0;
+            color: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+        .footer .nav-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            font-size: 0.8em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative;
+        }
+        .footer .nav-icon i {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        .footer .nav-icon:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .footer .nav-icon.active {
+            color: #c8e6c9;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #ff0000;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7em;
+            min-width: 15px;
+            text-align: center;
+            line-height: 1;
+            display: none;
+            transform: translate(50%, -50%);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Viewers Modal Styles */
+        .viewers-modal {
+            display: none;
+            position: fixed;
+            z-index: 103; /* Higher than story modal */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .viewers-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .viewers-modal-content h3 {
+            margin-top: 0;
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .viewers-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .viewer-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .viewer-item:last-child {
+            border-bottom: none;
+        }
+
+        .viewer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #555;
+            margin-right: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .viewer-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .viewer-info {
+            flex-grow: 1;
+            display: flex; /* Added to align username and tick */
+            align-items: center; /* Align items vertically */
+        }
+
+        .viewer-username {
+            font-weight: 500;
+            color: #333;
+            margin-right: 5px; /* Space between username and tick */
+        }
+
+        .viewer-time {
+            font-size: 0.8em;
+            color: #777;
+            margin-left: auto; /* Push time to the right */
+        }
+        
+        /* NEW: Style for the verified tick in the viewers list */
+        .verified-tick-viewer-list {
+            width: 14px; /* Same size as other ticks */
+            height: 14px;
+            vertical-align: middle; /* Align with text */
+            fill: #4CAF50; /* Green color */
+            margin-left: 2px; /* Small space after username */
+        }
+        /* End NEW */
+
+        .viewers-modal .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: #999;
+            font-size: 1.8em;
+            background: none;
+            border: none;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.3s ease;
+        }
+        .viewers-modal .close-button:hover {
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .header { padding: 10px 15px; }
+            .header h2 { font-size: 1.2em; }
+            .header .back-arrow { font-size: 1.5em; margin-right: 10px;}
+            .main-content { padding: 15px; margin-top: 60px; margin-bottom: 60px; }
+            .my-story-section, .friends-stories-section { padding: 15px; }
+            /* Adjusted stories icon size for smaller screens */
+            .stories-upload-icon {
+                width: 40px; 
+                height: 40px;
+            }
+            .upload-story-btn { max-width: 100%; }
+            .story-circle { width: 60px; height: 60px; font-size: 0.8em; border-width: 2px;}
+            .friend-story-info { font-size: 0.8em; }
+            .friend-story-info .username { font-size: 0.8em; } /* Adjusted for mobile */
+            .verified-tick-friend-list { width: 12px; height: 12px; } /* Adjusted for mobile */
+            .story-modal-content { max-width: none; width: 100%; height: 100%; border-radius: 0; } /* Full screen on mobile */
+            .close-button { font-size: 2em; right: 10px;}
+            .modal-header .profile-circle-small { width: 25px; height: 25px; font-size: 0.8em; }
+            .modal-header .username { font-size: 0.9em; }
+            .modal-header .story-time { font-size: 0.7em; }
+            .modal-header .verified-tick-modal { width: 12px; height: 12px; }
+            .story-text-overlay { font-size: 1em; padding: 10px; } /* Adjust text overlay for mobile */
+            .footer { padding: 10px 0; }
+            .footer .nav-icon { font-size: 0.7em; }
+            .footer .nav-icon i { font-size: 1.3em; }
+            .notification-badge {
+                top: 2px;
+                right: 2px;
+                font-size: 0.6em;
+                min-width: 12px;
+                padding: 1px 4px;
+            }
+            /* Viewers Modal for mobile */
+            .viewers-modal-content {
+                width: 95%;
+                padding: 15px;
+            }
+            .viewers-modal .close-button {
+                font-size: 1.5em;
+                top: 5px;
+                right: 10px;
+            }
+             /* NEW: Verified tick in viewers list for mobile */
+            .verified-tick-viewer-list {
+                width: 12px; /* Smaller tick for mobile */
+                height: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="left-section">
+            <i class="fas fa-arrow-left back-arrow" id="backButton"></i>
+            <h2>Stories</h2>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="my-story-section">
+            <h3>My Story</h3>
+            <div class="my-story-content" id="myStoryContent">
+                </div>
+        </div>
+
+        <div class="friends-stories-section">
+            <h3>Friends' Stories</h3>
+            <div id="friendsStoriesContainer">
+                <p class="no-stories">Loading friends' stories...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="nav-icon" id="homeIcon">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-icon" id="requestsIcon">
+            <i class="fas fa-bell"></i>
+            <span>Requests</span>
+            <span class="notification-badge" id="notificationBadge"></span>
+        </div>
+        <div class="nav-icon" id="plusIcon">
+            <i class="fas fa-plus-circle"></i>
+            <span>Add</span>
+        </div>
+        <div class="nav-icon" id="searchIcon">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </div>
+        <div class="nav-icon" id="profileIcon">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </div>
+    </div>
+
+    <div id="storyModal" class="story-modal">
+        <span class="close-button" id="closeStoryModal">&times;</span>
+        <div class="story-modal-content">
+            <div class="story-progress-container" id="storyProgressBarContainer"></div> 
+            <div class="modal-header">
+                <div class="user-info">
+                    <div class="profile-circle-small" id="modalProfileCircle"></div>
+                    <span class="username" id="modalUsername"></span>
+                    <span id="modalVerifiedTickContainer"></span>
+                    <span class="story-time" id="modalStoryTime"></span>
+                </div>
+            </div>
+            <img src="" alt="Story" class="story-image" id="modalStoryImage">
+            <div class="story-text-overlay" id="modalStoryText"></div> 
+        </div>
+    </div>
+
+    <div id="viewersModal" class="viewers-modal">
+        <div class="viewers-modal-content">
+            <span class="close-button" id="closeViewersModal">&times;</span>
+            <h3>Story Views (<span id="viewersCount">0</span>)</h3>
+            <ul id="viewersList" class="viewers-list">
+                </ul>
+            <p id="noViewersMessage" style="text-align: center; color: #777; display: none;">No views yet.</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc",
+            authDomain: "citas-bd0a3.firebaseapp.com",
+            databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com",
+            projectId: "citas-bd0a3",
+            storageBucket: "citas-bd0a3.firebasestorage.app",
+            messagingSenderId: "1082213903517",
+            appId: "1:1082213903517:web:22409e051e5442f37ef874",
+            measurementId: "G-TXKMGDLMVB"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // --- ImgBB API Configuration ---
+        const IMGBB_API_KEY = '7184e56bb0953c0545409c441c402a66'; // <--- **REPLACE THIS WITH YOUR ACTUAL IMGBB API KEY**
+
+        let currentUser = null;
+        let currentUserData = null; // To store full user data
+        let userFollowing = []; // IDs of users the current user is following
+
+        // DOM Elements
+        const backButton = document.getElementById('backButton');
+        const myStoryContent = document.getElementById('myStoryContent'); 
+        const friendsStoriesContainer = document.getElementById('friendsStoriesContainer'); 
+
+        // My Story Upload Elements
+        let myStoryImageInput; 
+        let myStoryTextInput; 
+        let storiesUploadIconLink; 
+        let myStoryPreviewContainer; 
+        let myStoryPreview; 
+        let uploadMyStoryBtn; 
+        let myStoryUploadMessage; 
+        let deleteStoryBtn; 
+        let myStoryViewInfo; // Element to display view count and icon
+
+        // Story Modal Elements
+        const storyModal = document.getElementById('storyModal');
+        const closeStoryModal = document.getElementById('closeStoryModal');
+        const modalStoryImage = document.getElementById('modalStoryImage');
+        const modalStoryText = document.getElementById('modalStoryText'); 
+        const modalProfileCircle = document.getElementById('modalProfileCircle');
+        const modalUsername = document.getElementById('modalUsername');
+        const modalVerifiedTickContainer = document.getElementById('modalVerifiedTickContainer');
+        const modalStoryTime = document.getElementById('modalStoryTime');
+        const storyProgressBarContainer = document.getElementById('storyProgressBarContainer');
+
+        // Viewers Modal Elements
+        const viewersModal = document.getElementById('viewersModal');
+        const closeViewersModal = document.getElementById('closeViewersModal');
+        const viewersCount = document.getElementById('viewersCount');
+        const viewersList = document.getElementById('viewersList');
+        const noViewersMessage = document.getElementById('noViewersMessage');
+
+        // Bottom Nav Icons
+        const homeIcon = document.getElementById('homeIcon');
+        const requestsIcon = document.getElementById('requestsIcon');
+        const plusIcon = document.getElementById('plusIcon');
+        const searchIcon = document.getElementById('searchIcon');
+        const profileIcon = document.getElementById('profileIcon');
+        const notificationBadge = document.getElementById('notificationBadge');
+
+        let storyTimeout; 
+
+        // SVG for the green tick
+        const verifiedTickSvgModal = `
+            <svg class="verified-tick-modal" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+        // SVG for friend list verified tick
+        const verifiedTickSvgFriendList = `
+            <svg class="verified-tick-friend-list" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+        // NEW: SVG for viewers list verified tick
+        const verifiedTickSvgViewerList = `
+            <svg class="verified-tick-viewer-list" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+
+        // --- Back Button Functionality ---
+        backButton.addEventListener('click', () => {
+            window.location.href = 'home.html';
+        });
+
+        // --- Firebase Auth State Listener ---
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("User logged in:", currentUser.uid);
+                try {
+                    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                    if (userDoc.exists) {
+                        currentUserData = userDoc.data();
+                        userFollowing = currentUserData.following || [];
+                    }
+                    displayMyStoryOption(); 
+                    loadFriendsStories(); 
+                    setupNotificationListener(currentUser.uid); 
+                } catch (error) {
+                    console.error("Error fetching current user data:", error);
+                    alert("Could not load user data. Some features might not work.");
+                }
+            } else {
+                console.log("No user logged in. Redirecting to index.html");
+                window.location.href = 'index.html';
+            }
+        });
+
+        // --- Firebase Listener for Notifications ---
+        function setupNotificationListener(userId) {
+            db.collection('notifications')
+                .where('recipientId', '==', userId)
+                .where('isRead', '==', false)
+                .onSnapshot(snapshot => {
+                    const unreadCount = snapshot.size;
+                    if (unreadCount > 0) {
+                        notificationBadge.textContent = unreadCount;
+                        notificationBadge.style.display = 'block'; 
+                    } else {
+                        notificationBadge.style.display = 'none'; 
+                    }
+                }, error => {
+                    console.error("Error listening for notifications:", error);
+                });
+        }
+
+        // --- Mark Notifications as Read on Requests Icon Click ---
+        requestsIcon.addEventListener('click', async () => {
+            if (currentUser) {
+                try {
+                    const unreadNotificationsQuery = await db.collection('notifications')
+                        .where('recipientId', '==', currentUser.uid)
+                        .where('isRead', '==', false)
+                        .get();
+
+                    const batch = db.batch();
+                    unreadNotificationsQuery.docs.forEach(doc => {
+                        batch.update(doc.ref, { isRead: true });
+                    });
+                    await batch.commit();
+                    console.log("All unread notifications marked as read.");
+                } catch (error) {
+                    console.error("Error marking notifications as read:", error);
+                }
+            }
+            window.location.href = 'requests.html';
+        });
+
+        // --- Display My Story or Upload Option ---
+        async function displayMyStoryOption() {
+            if (!currentUser) {
+                myStoryContent.innerHTML = '<p class="add-story-prompt">Please log in to add your story.</p>';
+                return;
+            }
+
+            myStoryContent.innerHTML = '<p class="loading-message">Checking for your story...</p>';
+
+            try {
+                const myStoryDoc = await db.collection('stories').doc(currentUser.uid).get();
+                let myStoryData = null;
+
+                if (myStoryDoc.exists && myStoryDoc.data().expiresAt.toMillis() > firebase.firestore.Timestamp.now().toMillis()) {
+                    myStoryData = {
+                        id: myStoryDoc.id,
+                        ...myStoryDoc.data()
+                    };
+                }
+
+                if (myStoryData) {
+                    // User has an active story
+                    // Fetch views for this story
+                    const storyViewsSnapshot = await db.collection('stories').doc(currentUser.uid).collection('views').get();
+                    const viewCount = storyViewsSnapshot.size;
+
+                    myStoryContent.innerHTML = `
+                        <div id="myStoryPreviewContainer">
+                            <img id="myStoryPreview" src="${myStoryData.imageUrl}" alt="My Story">
+                        </div>
+                        <p class="add-story-prompt">Your story is active. It will expire in 24 hours from upload.</p>
+                        ${myStoryData.storyText ? `<p><strong>Text:</strong> ${myStoryData.storyText}</p>` : ''}
+                        <div class="story-view-info" id="myStoryViewInfo">
+                            <i class="fas fa-eye eye-icon"></i>
+                            <span id="viewCount">${viewCount} Views</span>
+                        </div>
+                        <button id="deleteStoryBtn">Delete Story</button>
+                    `;
+                    myStoryPreviewContainer = document.getElementById('myStoryPreviewContainer');
+                    myStoryPreviewContainer.style.display = 'block'; 
+                    myStoryPreview = document.getElementById('myStoryPreview');
+                    
+                    deleteStoryBtn = document.getElementById('deleteStoryBtn');
+                    deleteStoryBtn.addEventListener('click', deleteMyStory);
+
+                    myStoryViewInfo = document.getElementById('myStoryViewInfo'); 
+                    myStoryViewInfo.addEventListener('click', () => openViewersModal(currentUser.uid)); 
+
+                    // Allow viewing own story
+                    myStoryPreviewContainer.addEventListener('click', () => {
+                        const myUserInfo = currentUserData || { username: 'You', avatar: '', isVerified: false };
+                        // No need to record view for own story
+                        openStoryModal(myStoryData.id, myStoryData.imageUrl, currentUser.uid, myUserInfo.username, myUserInfo.avatar, myUserInfo.isVerified, myStoryData.createdAt.toDate(), myStoryData.storyText, false); 
+                    });
+
+                } else {
+                    // No active story, prompt to upload
+                    myStoryContent.innerHTML = `
+                        <form id="myStoryUploadForm" class="add-story-area">
+                            <a href="#" id="storiesUploadIconLink" title="Add a Story">
+                                <svg class="stories-upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                    <path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM200 344V280H136c-13.3 0-24-10.7-24-24s10.7-24 24-24h64V168c0-13.3 10.7-24 24-24s24 10.7 24 24v64h64c13.3 0 24 10.7 24 24s-10.7 24-24 24H248v64c0 13.3-10.7 24-24 24s-24-10.7-24-24z"/>
+                                </svg>
+                            </a>
+                            <input type="file" id="myStoryImageInput" accept="image/*">
+                            <div id="myStoryPreviewContainer">
+                                <img id="myStoryPreview" src="#" alt="Story Preview">
+                            </div>
+                            <textarea id="myStoryTextInput" placeholder="Add text to your story (optional)" rows="3"></textarea>
+                            <p class="add-story-prompt">Tap the icon to add your story!</p>
+                            <button type="submit" id="uploadMyStoryBtn" class="upload-story-btn" disabled>Upload Story</button>
+                            <p id="myStoryUploadMessage" class="loading-message"></p>
+                        </form>
+                    `;
+                    // Re-assign elements after innerHTML update
+                    myStoryImageInput = document.getElementById('myStoryImageInput');
+                    myStoryTextInput = document.getElementById('myStoryTextInput'); 
+                    storiesUploadIconLink = document.getElementById('storiesUploadIconLink');
+                    myStoryPreviewContainer = document.getElementById('myStoryPreviewContainer');
+                    myStoryPreview = document.getElementById('myStoryPreview');
+                    uploadMyStoryBtn = document.getElementById('uploadMyStoryBtn');
+                    myStoryUploadMessage = document.getElementById('myStoryUploadMessage');
+
+                    // Attach event listeners for the new elements
+                    storiesUploadIconLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        myStoryImageInput.click();
+                    });
+
+                    myStoryImageInput.addEventListener('change', function() {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                myStoryPreview.src = e.target.result;
+                                myStoryPreviewContainer.style.display = 'block';
+                                uploadMyStoryBtn.disabled = false; 
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            myStoryPreview.src = '#';
+                            myStoryPreviewContainer.style.display = 'none';
+                            uploadMyStoryBtn.disabled = true; 
+                        }
+                    });
+
+                    document.getElementById('myStoryUploadForm').addEventListener('submit', uploadMyStory);
+                }
+
+            } catch (error) {
+                console.error("Error loading my story:", error);
+                myStoryContent.innerHTML = '<p class="add-story-prompt error">Error loading your story. Please try again.</p>';
+            }
+        }
+
+        // --- Handle My Story Upload ---
+        async function uploadMyStory(e) {
+            e.preventDefault();
+            if (!currentUser) return; 
+
+            const file = myStoryImageInput.files[0];
+            const storyText = myStoryTextInput.value.trim(); 
+
+            if (!file) {
+                alert("Please select an image to upload.");
+                return;
+            }
+
+            uploadMyStoryBtn.disabled = true;
+            myStoryUploadMessage.textContent = "Uploading story...";
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error ? errorData.error.message : 'Image upload failed');
+                }
+
+                const data = await response.json();
+                const imageUrl = data.data.url;
+
+                // Calculate Firestore expiration timestamp (24 hours from now)
+                const firestoreExpiration = firebase.firestore.Timestamp.now().toMillis() + (24 * 60 * 60 * 1000);
+
+                const storyData = {
+                    userId: currentUser.uid,
+                    imageUrl: imageUrl,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    expiresAt: new firebase.firestore.Timestamp(firestoreExpiration / 1000, 0)
+                };
+                if (storyText) {
+                    storyData.storyText = storyText; 
+                }
+
+                await db.collection('stories').doc(currentUser.uid).set(storyData); 
+                myStoryUploadMessage.textContent = "Story uploaded successfully!";
+                console.log("New story uploaded:", imageUrl, storyText);
+
+                myStoryImageInput.value = ''; 
+                myStoryTextInput.value = ''; 
+                displayMyStoryOption(); 
+                loadFriendsStories(); 
+
+            } catch (error) {
+                console.error("Error uploading story:", error);
+                myStoryUploadMessage.textContent = `Error: ${error.message}`;
+                alert("Failed to upload story. Please try again.");
+            } finally {
+                uploadMyStoryBtn.disabled = false;
+            }
+        }
+
+        // --- Delete My Story ---
+        async function deleteMyStory() {
+            if (!currentUser) {
+                alert("You must be logged in to delete a story.");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to delete your story?")) {
+                return;
+            }
+
+            try {
+                // Delete the story document
+                await db.collection('stories').doc(currentUser.uid).delete();
+                
+                // Delete the 'views' subcollection (if any)
+                const viewsRef = db.collection('stories').doc(currentUser.uid).collection('views');
+                const viewsSnapshot = await viewsRef.get();
+                if (!viewsSnapshot.empty) {
+                    const batch = db.batch();
+                    viewsSnapshot.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    console.log("Deleted story views subcollection.");
+                }
+
+                alert("Your story has been deleted.");
+                console.log("Story deleted for user:", currentUser.uid);
+                displayMyStoryOption(); 
+                loadFriendsStories(); 
+            } catch (error) {
+                console.error("Error deleting story:", error);
+                alert("Failed to delete story. Please try again.");
+            }
+        }
+
+
+        // --- Load Friends' Stories Functionality ---
+        async function loadFriendsStories() {
+            friendsStoriesContainer.innerHTML = '<p class="no-stories">Loading friends\' stories...</p>'; 
+            if (!currentUser) return;
+
+            try {
+                const followedStoryPromises = userFollowing.map(async (followedId) => {
+                    const storyDoc = await db.collection('stories').doc(followedId).get();
+                    // Ensure story exists and is not expired
+                    if (storyDoc.exists && storyDoc.data().expiresAt.toMillis() > firebase.firestore.Timestamp.now().toMillis()) {
+                        return { id: storyDoc.id, ...storyDoc.data() };
+                    }
+                    return null;
+                });
+
+                let followedStories = (await Promise.all(followedStoryPromises)).filter(story => story !== null);
+
+                // Fetch usernames, avatars, and verification status for all story owners
+                const storyUserIds = new Set(followedStories.map(story => story.userId));
+
+                const userDetailsMap = new Map();
+                if (storyUserIds.size > 0) {
+                    const userDocsPromises = Array.from(storyUserIds).map(id => db.collection('users').doc(id).get());
+                    const userDocs = await Promise.all(userDocsPromises);
+                    userDocs.forEach(doc => {
+                        if (doc.exists) {
+                            userDetailsMap.set(doc.id, {
+                                username: doc.data().username || 'Anonymous',
+                                avatar: doc.data().avatar || '',
+                                isVerified: doc.data().isVerified || false
+                            });
+                        }
+                    });
+                }
+
+                friendsStoriesContainer.innerHTML = ''; 
+
+                if (followedStories.length === 0) {
+                    friendsStoriesContainer.innerHTML = '<p class="no-stories">No friends\' stories to display. Follow more users!</p>';
+                    return;
+                }
+
+                // Sort followed stories by most recent
+                followedStories.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+
+                followedStories.forEach(story => {
+                    const userInfo = userDetailsMap.get(story.userId) || { username: 'Anonymous', avatar: '', isVerified: false };
+                    
+                    const friendStoryItem = document.createElement('div');
+                    friendStoryItem.classList.add('friend-story-item');
+                    friendStoryItem.dataset.userId = story.userId;
+                    friendStoryItem.dataset.storyId = story.id;
+
+                    let profileContent;
+                    if (userInfo.avatar) {
+                        profileContent = `<img src="${userInfo.avatar}" alt="${userInfo.username}'s avatar">`;
+                    } else {
+                        profileContent = userInfo.username.charAt(0).toUpperCase();
+                    }
+
+                    friendStoryItem.innerHTML = `
+                        <div class="story-circle">
+                            ${profileContent}
+                        </div>
+                        <div class="friend-story-info">
+                            <span class="username">${userInfo.username}</span>
+                            ${userInfo.isVerified ? verifiedTickSvgFriendList : ''}
+                        </div>
+                    `;
+                    friendsStoriesContainer.appendChild(friendStoryItem);
+
+                    // Add click listener to open modal
+                    friendStoryItem.addEventListener('click', () => openStoryModal(story.id, story.imageUrl, story.userId, userInfo.username, userInfo.avatar, userInfo.isVerified, story.createdAt.toDate(), story.storyText, true)); 
+                });
+
+            } catch (error) {
+                console.error("Error loading friends' stories:", error);
+                friendsStoriesContainer.innerHTML = '<p class="no-stories error">Error loading friends\' stories. Please try again.</p>';
+            }
+        }
+
+        // --- Story Modal Functions ---
+        async function openStoryModal(storyId, imageUrl, userId, username, avatar, isVerified, timestamp, storyText = '', recordView = true) {
+            modalStoryImage.src = imageUrl;
+
+            // Populate modal header user info
+            if (avatar) {
+                modalProfileCircle.innerHTML = `<img src="${avatar}" alt="${username}'s avatar">`;
+            } else {
+                modalProfileCircle.innerHTML = username.charAt(0).toUpperCase();
+            }
+            modalUsername.textContent = username;
+            if (isVerified) {
+                modalVerifiedTickContainer.innerHTML = verifiedTickSvgModal;
+            } else {
+                modalVerifiedTickContainer.innerHTML = '';
+            }
+            modalStoryTime.textContent = formatTimestamp(timestamp);
+
+            // Display story text or hide overlay
+            if (storyText) {
+                modalStoryText.textContent = storyText;
+                modalStoryText.style.display = 'block';
+            } else {
+                modalStoryText.textContent = '';
+                modalStoryText.style.display = 'none';
+            }
+
+            // Display modal
+            storyModal.style.display = 'flex'; 
+            document.body.style.overflow = 'hidden'; 
+
+            // Record view if it's not the current user's own story
+            if (recordView && currentUser && currentUser.uid !== userId) {
+                try {
+                    await db.collection('stories').doc(userId).collection('views').doc(currentUser.uid).set({
+                        viewerId: currentUser.uid,
+                        viewedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`View recorded for story ${storyId} by ${currentUser.uid}`);
+                } catch (error) {
+                    console.error("Error recording view:", error);
+                }
+            }
+
+            startProgressBar(5000); 
+        }
+
+        function startProgressBar(duration) {
+            storyProgressBarContainer.innerHTML = '<div class="story-progress-bar"></div>';
+            const progressBar = storyProgressBarContainer.querySelector('.story-progress-bar');
+            progressBar.style.transition = `transform ${duration / 1000}s linear`;
+            requestAnimationFrame(() => {
+                progressBar.style.transform = 'scaleX(1)';
+            });
+        }
+
+        function closeStoryModalFunc() {
+            storyModal.style.display = 'none'; 
+            document.body.style.overflow = 'auto'; 
+            clearTimeout(storyTimeout); 
+            storyProgressBarContainer.innerHTML = ''; 
+            modalStoryImage.src = ''; 
+            modalStoryText.textContent = ''; 
+            modalStoryText.style.display = 'none'; 
+            // When closing the story modal, re-fetch the current user's story to update the view count
+            if (currentUser) {
+                displayMyStoryOption();
+            }
+        }
+
+        closeStoryModal.addEventListener('click', closeStoryModalFunc);
+        storyModal.addEventListener('click', (e) => {
+            // Close modal if clicked outside the content area
+            if (e.target === storyModal) {
+                closeStoryModalFunc();
+            }
+        });
+
+        // --- Viewers Modal Functions ---
+        async function openViewersModal(storyOwnerId) {
+            viewersList.innerHTML = ''; // Clear previous viewers
+            viewersCount.textContent = '0';
+            noViewersMessage.style.display = 'none';
+            viewersModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent body scroll
+
+            try {
+                const viewsSnapshot = await db.collection('stories').doc(storyOwnerId).collection('views')
+                                            .orderBy('viewedAt', 'desc') 
+                                            .get();
+                
+                if (viewsSnapshot.empty) {
+                    noViewersMessage.style.display = 'block';
+                    viewersCount.textContent = '0';
+                    return;
+                }
+
+                viewersCount.textContent = viewsSnapshot.size;
+
+                const viewerIds = viewsSnapshot.docs.map(doc => doc.id);
+                const viewerDetailsPromises = viewerIds.map(id => db.collection('users').doc(id).get());
+                const viewerDocs = await Promise.all(viewerDetailsPromises);
+
+                const viewerDataMap = new Map();
+                viewerDocs.forEach(doc => {
+                    if (doc.exists) {
+                        viewerDataMap.set(doc.id, doc.data());
+                    }
+                });
+
+                viewsSnapshot.docs.forEach(doc => {
+                    const viewerId = doc.id;
+                    const viewTime = doc.data().viewedAt ? doc.data().viewedAt.toDate() : new Date();
+                    const viewerInfo = viewerDataMap.get(viewerId);
+
+                    if (viewerInfo) {
+                        const listItem = document.createElement('li');
+                        listItem.classList.add('viewer-item');
+
+                        let avatarContent;
+                        if (viewerInfo.avatar) {
+                            avatarContent = `<img src="${viewerInfo.avatar}" alt="${viewerInfo.username}'s avatar">`;
+                        } else {
+                            avatarContent = viewerInfo.username.charAt(0).toUpperCase();
+                        }
+
+                        listItem.innerHTML = `
+                            <div class="viewer-avatar">${avatarContent}</div>
+                            <div class="viewer-info">
+                                <span class="viewer-username">${viewerInfo.username}</span>
+                                ${viewerInfo.isVerified ? verifiedTickSvgViewerList : ''} <span class="viewer-time">${formatTimestamp(viewTime)}</span>
+                            </div>
+                        `;
+                        viewersList.appendChild(listItem);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error fetching story viewers:", error);
+                viewersList.innerHTML = '<p style="color: red; text-align: center;">Could not load viewers.</p>';
+            }
+        }
+
+        function closeViewersModalFunc() {
+            viewersModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; 
+            viewersList.innerHTML = ''; 
+            noViewersMessage.style.display = 'none';
+        }
+
+        closeViewersModal.addEventListener('click', closeViewersModalFunc);
+        viewersModal.addEventListener('click', (e) => {
+            if (e.target === viewersModal) {
+                closeViewersModalFunc();
+            }
+        });
+
+        // Helper function to format timestamp
+        function formatTimestamp(date) {
+            const now = new Date();
+            const diffSeconds = Math.floor((now - date) / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffSeconds < 60) {
+                return "just now";
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes}m ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours}h ago`;
+            } else if (diffDays < 7) {
+                return `${diffDays}d ago`;
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+        }
+
+        // --- Bottom Nav Icon Click Handlers ---
+        homeIcon.addEventListener('click', () => {
+            window.location.href = 'home.html';
+        });
+        requestsIcon.addEventListener('click', async () => {
+            if (currentUser) {
+                try {
+                    const unreadNotificationsQuery = await db.collection('notifications')
+                        .where('recipientId', '==', currentUser.uid)
+                        .where('isRead', '==', false)
+                        .get();
+
+                    const batch = db.batch();
+                    unreadNotificationsQuery.docs.forEach(doc => {
+                        batch.update(doc.ref, { isRead: true });
+                    });
+                    await batch.commit();
+                    console.log("All unread notifications marked as read.");
+                } catch (error) {
+                    console.error("Error marking notifications as read:", error);
+                }
+            }
+            window.location.href = 'requests.html';
+        });
+        plusIcon.addEventListener('click', () => {
+            window.location.href = 'post.html';
+        });
+        searchIcon.addEventListener('click', () => {
+            window.location.href = 'search.html';
+        });
+        profileIcon.addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // Helper function to update active icon
+        function updateActiveNavIcon(clickedIcon) {
+            const allNavIcons = document.querySelectorAll('.footer .nav-icon');
+            allNavIcons.forEach(icon => {
+                icon.classList.remove('active');
+            });
+            clickedIcon.classList.add('active');
+        }
+
+        // Set the active icon on page load based on current page
+        document.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname.split('/').pop();
+        });
+    </script>
+</body>
+</html>

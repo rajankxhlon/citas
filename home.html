@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - My Social App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Top Green Header Bar */
+        .header {
+            width: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            padding: 15px 20px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .header .user-info i {
+            margin-right: 10px;
+            font-size: 1.3em;
+        }
+        
+        /* Style for the verified tick in header */
+        .header .verified-tick-header {
+            width: 18px; /* Slightly larger for header */
+            height: 18px;
+            vertical-align: middle;
+            margin-left: 5px; /* Space after username */
+            fill: #fff; /* White for header */
+        }
+
+        /* New style for the stories text/link */
+        .header .stories-link {
+            color: #fff;
+            font-size: 1.1em; /* Adjust font size as needed */
+            text-decoration: none;
+            margin-right: 15px; /* Space between stories and logout icon */
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            font-weight: 500; /* Make it a bit bolder */
+        }
+
+        .header .stories-link:hover {
+            opacity: 0.8; /* Slight fade on hover */
+        }
+
+        .header .logout-icon {
+            color: #fff;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .header .logout-icon:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            text-align: center;
+            margin-top: 80px; /* Space for the fixed top header */
+            margin-bottom: 70px; /* Space for the fixed bottom footer */
+            box-sizing: border-box;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            max-width: 600px; /* Limit width for better readability */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        #postsContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Space between posts */
+        }
+
+        .post-card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+            justify-content: space-between; /* To push follow button to the right */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+
+        .post-header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .post-header .profile-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #2196F3; /* Blue background for circle */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-right: 10px;
+            flex-shrink: 0; /* Prevent shrinking */
+            overflow: hidden; /* **IMPORTANT for clipping avatar image** */
+        }
+
+        /* New: Style for avatar image within profile-circle */
+        .post-header .profile-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the image covers the entire circle */
+            border-radius: 50%; /* Maintains circular shape for the image */
+            display: block; /* Removes any extra space below the image */
+        }
+
+        .post-header .post-username-clickable {
+            display: flex; /* To align username and tick */
+            align-items: center;
+            cursor: pointer; /* Indicate it's clickable */
+        }
+
+        .post-header .post-username {
+            font-size: 1.1em;
+            color: #4CAF50;
+            margin-right: 5px; /* Reduced margin to accommodate tick */
+        }
+        
+        /* Style for the verified tick within posts */
+        .post-header .verified-tick {
+            width: 16px; /* Adjust size as needed */
+            height: 16px;
+            vertical-align: middle; /* Align with text baseline */
+            margin-left: 2px; /* Small space after username */
+            fill: #4CAF50; /* Ensure the SVG color is green if it's a monochrome SVG */
+        }
+
+        .post-header .post-time {
+            font-size: 0.9em;
+            color: #888;
+            margin-left: 10px; /* Space from username/tick */
+        }
+
+        .follow-button {
+            background-color: #2196F3; /* Blue follow button */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            margin-left: 10px; /* Space from username/tick */
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .follow-button:hover {
+            background-color: #1976D2;
+        }
+
+        .follow-button.following {
+            background-color: #9E9E9E; /* Grey for following */
+            cursor: default;
+        }
+        
+        .follow-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .post-content {
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 15px;
+            white-space: pre-wrap; /* Preserve whitespace and breaks */
+            word-wrap: break-word; /* Break long words */
+        }
+
+        /* NEW: Styles for post images */
+        .post-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: block; /* Ensures image takes its own line */
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: space-around; /* Distribute like/comment evenly */
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .post-action-button {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #555;
+            font-size: 1em;
+            transition: color 0.3s ease;
+        }
+
+        .post-action-button i {
+            margin-right: 5px;
+            font-size: 1.2em;
+        }
+
+        .post-action-button:hover {
+            color: #4CAF50;
+        }
+
+        .post-action-button.liked {
+            color: #E91E63; /* Pink for liked state */
+        }
+
+        .like-count {
+            margin-left: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .no-posts {
+            color: #777;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Bottom Navigation Bar (Footer) */
+        .footer {
+            width: 100%;
+            background: linear-gradient(to right, #4CAF50, #66BB6A);
+            padding: 15px 0;
+            color: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+        .footer .nav-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            font-size: 0.8em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative; /* Added for badge positioning */
+        }
+        .footer .nav-icon i {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        .footer .nav-icon:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .footer .nav-icon.active {
+            color: #c8e6c9;
+        }
+
+        /* Notification Badge Styling */
+        .notification-badge {
+            position: absolute;
+            top: 5px; /* Adjust as needed */
+            right: 5px; /* Adjust as needed */
+            background-color: #ff0000; /* Red color for the badge */
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7em;
+            min-width: 15px; /* Ensure enough space for two digits */
+            text-align: center;
+            line-height: 1; /* Center the text vertically */
+            display: none; /* Hidden by default */
+            transform: translate(50%, -50%); /* Adjust position relative to its parent */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body { padding-top: 70px; padding-bottom: 60px; }
+            .header { padding: 10px 15px; font-size: 1em; }
+            .header .user-info { font-size: 0.95em; }
+            .header .user-info i { font-size: 1.1em; }
+            /* Adjusted stories text/link size for smaller screens */
+            .header .stories-link {
+                font-size: 0.95em;
+                margin-right: 10px;
+            }
+            .header .logout-icon { font-size: 1.3em; }
+            h1 { font-size: 2em; margin-bottom: 20px; }
+            .main-content { padding: 15px; }
+            .post-card { padding: 15px; }
+            .post-header .profile-circle { 
+                width: 35px; 
+                height: 35px; 
+                font-size: 1.1em; 
+            }
+            .post-header .profile-circle img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+            }
+            .post-header .post-username { font-size: 1em; }
+            .verified-tick { width: 14px; height: 14px; } /* Adjust tick size for smaller screens */
+            .verified-tick-header { width: 16px; height: 16px; } /* Adjust tick size for smaller screens */
+            .follow-button { padding: 5px 10px; font-size: 0.8em; margin-left: 5px; }
+            .post-content { font-size: 1em; }
+            .post-image { margin-top: 10px; } /* Adjust margin for smaller screens */
+            .post-action-button { font-size: 0.9em; }
+            .post-action-button i { font-size: 1.1em; }
+            .footer { padding: 10px 0; }
+            .footer .nav-icon { font-size: 0.7em; }
+            .footer .nav-icon i { font-size: 1.3em; }
+            .notification-badge {
+                top: 2px; /* Adjusted for smaller screens */
+                right: 2px; /* Adjusted for smaller screens */
+                font-size: 0.6em;
+                min-width: 12px;
+                padding: 1px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="user-info">
+            <i class="fas fa-user-circle"></i> 
+            <span id="usernameDisplay">Loading...</span>
+            <span id="headerVerifiedTickContainer"></span> 
+        </div>
+        <div>
+            <a href="stories.html" class="stories-link">Stories</a>
+            <i class="fas fa-sign-out-alt logout-icon" id="logoutIcon"></i>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1>Recent Posts</h1>
+        <div id="postsContainer">
+            <p class="no-posts">Loading posts...</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="nav-icon active" id="homeIcon">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </div>
+        <div class="nav-icon" id="requestsIcon">
+            <i class="fas fa-bell"></i>
+            <span>Requests</span>
+            <span class="notification-badge" id="notificationBadge"></span> </div>
+        <div class="nav-icon" id="plusIcon">
+            <i class="fas fa-plus-circle"></i>
+            <span>Add</span>
+        </div>
+        <div class="nav-icon" id="searchIcon">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </div>
+        <div class="nav-icon" id="profileIcon">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc",
+            authDomain: "citas-bd0a3.firebaseapp.com",
+            databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com",
+            projectId: "citas-bd0a3",
+            storageBucket: "citas-bd0a3.firebasestorage.app",
+            messagingSenderId: "1082213903517",
+            appId: "1:1082213903517:web:22409e051e5442f37ef874",
+            measurementId: "G-TXKMGDLMVB"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null; // To store the currently logged-in user's data
+        let currentUserFollowing = []; // To store IDs of users current user is following
+
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const headerVerifiedTickContainer = document.getElementById('headerVerifiedTickContainer'); 
+        const logoutIcon = document.getElementById('logoutIcon');
+        const postsContainer = document.getElementById('postsContainer');
+        
+        // Bottom Navigation Icons
+        const homeIcon = document.getElementById('homeIcon');
+        const requestsIcon = document.getElementById('requestsIcon');
+        const plusIcon = document.getElementById('plusIcon');
+        const searchIcon = document.getElementById('searchIcon');
+        const profileIcon = document.getElementById('profileIcon');
+
+        // Notification badge element
+        const notificationBadge = document.getElementById('notificationBadge');
+
+        // SVG for the green tick
+        const verifiedTickSvgPost = `
+            <svg class="verified-tick" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+
+        const verifiedTickSvgHeader = `
+            <svg class="verified-tick-header" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            </svg>
+        `;
+
+        // --- Logout Functionality ---
+        logoutIcon.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html'; // Redirect to login page after logout
+            } catch (error) {
+                console.error("Error signing out:", error.message);
+                alert("Error logging out. Please try again.");
+            }
+        });
+
+        // --- Firebase Listener for Notifications ---
+        function setupNotificationListener(userId) {
+            db.collection('notifications')
+                .where('recipientId', '==', userId)
+                .where('isRead', '==', false)
+                .onSnapshot(snapshot => {
+                    const unreadCount = snapshot.size;
+                    if (unreadCount > 0) {
+                        notificationBadge.textContent = unreadCount;
+                        notificationBadge.style.display = 'block'; // Show the badge
+                    } else {
+                        notificationBadge.style.display = 'none'; // Hide the badge
+                    }
+                }, error => {
+                    console.error("Error listening for notifications:", error);
+                });
+        }
+
+        // --- Mark Notifications as Read on Requests Icon Click ---
+        requestsIcon.addEventListener('click', async () => {
+            if (currentUser) {
+                try {
+                    const unreadNotificationsQuery = await db.collection('notifications')
+                        .where('recipientId', '==', currentUser.uid)
+                        .where('isRead', '==', false)
+                        .get();
+
+                    const batch = db.batch();
+                    unreadNotificationsQuery.docs.forEach(doc => {
+                        batch.update(doc.ref, { isRead: true });
+                    });
+                    await batch.commit();
+                    console.log("All unread notifications marked as read.");
+                    // The onSnapshot listener will automatically update the badge
+                } catch (error) {
+                    console.error("Error marking notifications as read:", error);
+                }
+            }
+            window.location.href = 'requests.html'; // Navigate to requests page
+        });
+
+        // --- Auth State Observer (for initial load and user data) ---
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user; // Store current user
+                console.log("User is logged in:", user.email, user.uid);
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        usernameDisplay.textContent = userData.username || user.email || "User";
+                        // Check if current user is verified and show tick in header
+                        if (userData.isVerified) {
+                            headerVerifiedTickContainer.innerHTML = verifiedTickSvgHeader;
+                        } else {
+                            headerVerifiedTickContainer.innerHTML = ''; // Clear if not verified
+                        }
+                        currentUserFollowing = userData.following || []; // Get who the current user is following
+                    } else {
+                        usernameDisplay.textContent = user.email || "User";
+                        headerVerifiedTickContainer.innerHTML = '';
+                    }
+                    // Setup notification listener AFTER currentUser is set
+                    setupNotificationListener(user.uid);
+                } catch (error) {
+                    console.error("Error fetching current user's username or verification status:", error);
+                    usernameDisplay.textContent = user.email || "User";
+                    headerVerifiedTickContainer.innerHTML = '';
+                }
+                loadPosts(); // Load posts once user is authenticated
+            } else {
+                // User is not logged in, redirect to login page
+                console.log("No user logged in. Redirecting to index.html");
+                window.location.href = 'index.html';
+            }
+        });
+
+        // --- Helper function to shuffle an array (Fisher-Yates algorithm) ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+        }
+
+        // --- Load Posts Functionality ---
+        async function loadPosts() {
+            postsContainer.innerHTML = '<p class="no-posts">Loading posts...</p>'; // Show loading message
+
+            if (!currentUser) {
+                postsContainer.innerHTML = '<p class="no-posts">Please log in to see posts.</p>';
+                return;
+            }
+
+            try {
+                // Fetch posts from Firestore without any specific order
+                db.collection('posts')
+                    .limit(50) // Fetch more posts to have a good pool for randomization
+                    .onSnapshot(async (querySnapshot) => {
+                        postsContainer.innerHTML = ''; // Clear previous posts
+
+                        if (querySnapshot.empty) {
+                            postsContainer.innerHTML = '<p class="no-posts">No posts to display yet.</p>';
+                            return;
+                        }
+
+                        // Convert snapshot to an array to shuffle
+                        const posts = [];
+                        querySnapshot.forEach(doc => {
+                            posts.push({ id: doc.id, data: doc.data() });
+                        });
+
+                        shuffleArray(posts); // Shuffle the posts array randomly
+
+                        // Fetch current user's liked posts to show liked state
+                        const currentUserLikesDoc = await db.collection('userLikes').doc(currentUser.uid).get();
+                        const likedPostIds = currentUserLikesDoc.exists && currentUserLikesDoc.data().likes ? 
+                                            currentUserLikesDoc.data().likes : [];
+
+                        // Fetch user data (including avatar and verification status) for all unique post authors
+                        const userIds = [...new Set(posts.map(post => post.data.userId))]; // Get unique IDs
+                        const userDetailsMap = new Map(); // Store user details for quick lookup
+
+                        if (userIds.length > 0) {
+                            const userDocsPromises = userIds.map(id => db.collection('users').doc(id).get());
+                            const userDocs = await Promise.all(userDocsPromises);
+
+                            userDocs.forEach(userDoc => {
+                                if (userDoc.exists) {
+                                    userDetailsMap.set(userDoc.id, {
+                                        username: userDoc.data().username || 'Anonymous',
+                                        isVerified: userDoc.data().isVerified || false,
+                                        avatar: userDoc.data().avatar || '' // Fetch avatar URL
+                                    });
+                                } else {
+                                    userDetailsMap.set(userDoc.id, { username: 'Anonymous', isVerified: false, avatar: '' });
+                                }
+                            });
+                        }
+
+                        posts.forEach(post => {
+                            const postData = post.data;
+                            const postId = post.id; // Document ID of the post
+                            const postUserId = postData.userId; // Get the ID of the user who posted
+                            const content = postData.content;
+                            const imageUrl = postData.imageUrl; // Get the image URL from post data
+                            const timestamp = postData.timestamp ? postData.timestamp.toDate() : new Date();
+                            const likesCount = postData.likesCount || 0; // Get likes count, default to 0
+
+                            const isLiked = likedPostIds.includes(postId);
+                            
+                            const posterInfo = userDetailsMap.get(postUserId) || { username: 'Anonymous', isVerified: false, avatar: '' };
+                            const username = posterInfo.username;
+                            const isVerified = posterInfo.isVerified;
+                            const avatar = posterInfo.avatar; // Get avatar URL
+
+                            // Determine content for the profile circle (avatar or initial)
+                            let profileCircleContent;
+                            if (avatar) {
+                                profileCircleContent = `<img src="${avatar}" alt="User Avatar">`;
+                            } else {
+                                profileCircleContent = username.charAt(0).toUpperCase();
+                            }
+
+                            // Determine if current user is following this post's user
+                            const isFollowing = currentUserFollowing.includes(postUserId);
+                            const isSelfPost = currentUser.uid === postUserId; // Check if it's the current user's post
+
+                            const postElement = document.createElement('div');
+                            postElement.classList.add('post-card');
+                            postElement.innerHTML = `
+                                <div class="post-header">
+                                    <div class="post-header-left">
+                                        <div class="profile-circle">${profileCircleContent}</div>
+                                        <div class="post-username-clickable" data-user-id="${postUserId}">
+                                            <span class="post-username">${username}</span>
+                                            ${isVerified ? verifiedTickSvgPost : ''}
+                                        </div>
+                                        <span class="post-time">${formatTimestamp(timestamp)}</span>
+                                    </div>
+                                    ${!isSelfPost ? `
+                                        <button class="follow-button ${isFollowing ? 'following' : ''}" 
+                                                data-user-id="${postUserId}"
+                                                data-current-state="${isFollowing ? 'following' : 'not-following'}">
+                                            ${isFollowing ? 'Following' : 'Follow'}
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                <p class="post-content">${content}</p>
+                                ${imageUrl ? `<img src="${imageUrl}" alt="Post Image" class="post-image">` : ''} <div class="post-actions">
+                                    <div class="post-action-button like-button ${isLiked ? 'liked' : ''}" data-post-id="${postId}">
+                                        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                                        <span class="like-count">${likesCount}</span>
+                                    </div>
+                                    <div class="post-action-button comment-button" data-post-id="${postId}">
+                                        <i class="far fa-comment"></i>
+                                        <span>Comment</span>
+                                    </div>
+                                </div>
+                            `;
+                            postsContainer.appendChild(postElement);
+                        });
+
+                        // Attach event listeners to all dynamically created elements
+                        postsContainer.querySelectorAll('.like-button').forEach(button => {
+                            button.addEventListener('click', handleLike);
+                        });
+                        postsContainer.querySelectorAll('.comment-button').forEach(button => {
+                            button.addEventListener('click', handleComment);
+                        });
+                        postsContainer.querySelectorAll('.follow-button').forEach(button => {
+                            button.addEventListener('click', handleFollow);
+                        });
+                        // NEW: Attach event listeners to username clickables
+                        postsContainer.querySelectorAll('.post-username-clickable').forEach(element => {
+                            element.addEventListener('click', handleUsernameClick);
+                        });
+
+                    }, (error) => {
+                        console.error("Error loading posts with snapshot:", error);
+                        postsContainer.innerHTML = '<p class="no-posts error">Error loading posts. Please try again.</p>';
+                    });
+
+            } catch (error) {
+                console.error("Initial error fetching posts:", error);
+                postsContainer.innerHTML = '<p class="no-posts error">Error loading posts. Please try again.</p>';
+            }
+        }
+
+        // --- Handle Like Functionality ---
+        async function handleLike(event) {
+            if (!currentUser) {
+                alert('You must be logged in to like posts.');
+                return;
+            }
+
+            const likeButton = event.currentTarget;
+            const postId = likeButton.dataset.postId;
+            let isLiked = likeButton.classList.contains('liked'); // Use let as it can change
+
+            const postRef = db.collection('posts').doc(postId);
+            const userLikesRef = db.collection('userLikes').doc(currentUser.uid);
+
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const postDoc = await transaction.get(postRef);
+                    const userLikesDoc = await transaction.get(userLikesRef);
+
+                    if (!postDoc.exists) throw "Post does not exist!";
+
+                    const currentLikes = postDoc.data().likesCount || 0;
+                    
+                    if (isLiked) {
+                        // Unlike the post
+                        const newLikes = Math.max(0, currentLikes - 1); // Ensure likes don't go negative
+                        transaction.update(postRef, { likesCount: newLikes });
+                        if (userLikesDoc.exists) {
+                            transaction.update(userLikesRef, {
+                                likes: firebase.firestore.FieldValue.arrayRemove(postId)
+                            });
+                        }
+                        // Update UI immediately (optimistic update)
+                        likeButton.classList.remove('liked');
+                        likeButton.querySelector('i').classList.replace('fas', 'far');
+                        likeButton.querySelector('.like-count').textContent = newLikes;
+                    } else {
+                        // Like the post
+                        const newLikes = currentLikes + 1;
+                        transaction.update(postRef, { likesCount: newLikes });
+                        if (userLikesDoc.exists) {
+                            transaction.update(userLikesRef, {
+                                likes: firebase.firestore.FieldValue.arrayUnion(postId)
+                            });
+                        } else {
+                            // If userLikes document doesn't exist, create it
+                            transaction.set(userLikesRef, { likes: [postId] });
+                        }
+                        // Update UI immediately (optimistic update)
+                        likeButton.classList.add('liked');
+                        likeButton.querySelector('i').classList.replace('far', 'fas');
+                        likeButton.querySelector('.like-count').textContent = newLikes;
+
+                        // --- NEW: Create a notification for the post author (conceptual) ---
+                        // You'd need to fetch the post to get the author's userId
+                        const postAuthorId = postDoc.data().userId; 
+                        if (postAuthorId && postAuthorId !== currentUser.uid) { // Don't notify user about their own likes
+                            // This would be better done in a Cloud Function to ensure reliability and security
+                            // but for a client-side example, it's placed here.
+                            await db.collection('notifications').add({
+                                recipientId: postAuthorId,
+                                senderId: currentUser.uid,
+                                type: 'like',
+                                message: `${usernameDisplay.textContent} liked your post.`, 
+                                isRead: false,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error liking/unliking post:", error);
+                alert('Failed to update like status. Please try again.');
+                // Revert UI if transaction fails (rollback optimistic update)
+                // This part would be more complex and usually handled by the onSnapshot listener eventually correcting it
+            }
+        }
+
+        // --- Handle Follow/Unfollow Functionality ---
+        async function handleFollow(event) {
+            const button = event.currentTarget;
+            const targetUserId = button.dataset.userId;
+            let currentState = button.dataset.currentState; // 'following' or 'not-following'
+
+            if (!currentUser || currentUser.uid === targetUserId) {
+                // Should already be hidden for self-posts, but good to double check
+                console.warn("Attempted to follow/unfollow self or no current user.");
+                return;
+            }
+
+            button.disabled = true; // Disable button to prevent multiple clicks
+            const originalText = button.textContent;
+            button.textContent = '...';
+
+            try {
+                const currentUserRef = db.collection('users').doc(currentUser.uid);
+                const targetUserRef = db.collection('users').doc(targetUserId);
+
+                await db.runTransaction(async (transaction) => {
+                    const currentUserDoc = await transaction.get(currentUserRef);
+                    const targetUserDoc = await transaction.get(targetUserRef);
+
+                    if (!currentUserDoc.exists || !targetUserDoc.exists) {
+                        throw new Error("User data not found for follow action.");
+                    }
+
+                    if (currentState === 'following') {
+                        // Unfollow logic
+                        transaction.update(currentUserRef, {
+                            following: firebase.firestore.FieldValue.arrayRemove(targetUserId)
+                        });
+                        transaction.update(targetUserRef, {
+                            followers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                        });
+                        currentState = 'not-following';
+                    } else {
+                        // Follow logic
+                        transaction.update(currentUserRef, {
+                            following: firebase.firestore.FieldValue.arrayUnion(targetUserId)
+                        });
+                        transaction.update(targetUserRef, {
+                            followers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                        });
+                        currentState = 'following';
+
+                        // --- NEW: Create a notification for the target user (conceptual) ---
+                        // You'd need to get current user's username for the message
+                        const currentUserName = usernameDisplay.textContent; 
+                        await db.collection('notifications').add({
+                            recipientId: targetUserId,
+                            senderId: currentUser.uid,
+                            type: 'follow',
+                            message: `${currentUserName} started following you.`,
+                            isRead: false,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                });
+
+                // Update UI based on new state
+                button.dataset.currentState = currentState;
+                if (currentState === 'following') {
+                    button.textContent = 'Following';
+                    button.classList.add('following');
+                    // Add to local currentUserFollowing array
+                    currentUserFollowing.push(targetUserId); 
+                } else {
+                    button.textContent = 'Follow';
+                    button.classList.remove('following');
+                    // Remove from local currentUserFollowing array
+                    currentUserFollowing = currentUserFollowing.filter(id => id !== targetUserId);
+                }
+                button.disabled = false; // Re-enable button
+
+            } catch (error) {
+                console.error("Error following/unfollowing user:", error);
+                alert(`Failed to ${currentState === 'following' ? 'unfollow' : 'follow'}. Please try again.`);
+                button.disabled = false; // Re-enable button on error
+                button.textContent = originalText; // Revert text
+            }
+        }
+
+        // --- Handle Comment Functionality ---
+        function handleComment(event) {
+            const postId = event.currentTarget.dataset.postId;
+            window.location.href = `comments.html?postId=${postId}`;
+        }
+
+        // --- Handle Username Click (New functionality) ---
+        function handleUsernameClick(event) {
+            const userId = event.currentTarget.dataset.userId;
+            // Prevent navigating to profile if it's the current user's profile
+            if (currentUser && currentUser.uid === userId) {
+                window.location.href = 'profile.html'; // Go to own profile page
+            } else {
+                window.location.href = `user_profile.html?userId=${userId}`; // Go to other user's profile page
+            }
+        }
+
+        // Helper function to format timestamp
+        function formatTimestamp(date) {
+            const now = new Date();
+            const diffSeconds = Math.floor((now - date) / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffSeconds < 60) {
+                return "just now";
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes}m ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours}h ago`;
+            } else if (diffDays < 7) {
+                return `${diffDays}d ago`;
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+        }
+
+        // --- Bottom Nav Icon Click Handlers ---
+        homeIcon.addEventListener('click', () => {
+            window.location.href = 'home.html';
+        });
+        // requestsIcon.addEventListener('click', ... handled above for badge logic ...);
+        plusIcon.addEventListener('click', () => {
+            window.location.href = 'post.html';
+        });
+        searchIcon.addEventListener('click', () => {
+            window.location.href = 'search.html';
+        });
+        profileIcon.addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // Helper function to update active icon
+        function updateActiveNavIcon(clickedIcon) {
+            const allNavIcons = document.querySelectorAll('.footer .nav-icon');
+            allNavIcons.forEach(icon => {
+                icon.classList.remove('active');
+            });
+            clickedIcon.classList.add('active');
+        }
+
+        // Set the active icon on page load based on current page
+        document.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname.split('/').pop();
+            if (path === 'home.html' || path === '') {
+                updateActiveNavIcon(homeIcon);
+            } else if (path === 'requests.html') {
+                updateActiveNavIcon(requestsIcon);
+            } else if (path === 'post.html') {
+                updateActiveNavIcon(plusIcon);
+            } else if (path === 'search.html') {
+                updateActiveNavIcon(searchIcon);
+            } else if (path === 'profile.html') {
+                updateActiveNavIcon(profileIcon);
+            }
+        });
+    </script>
+</body>
+</html>
