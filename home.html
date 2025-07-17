@@ -121,6 +121,10 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             text-align: left;
         }
+        /* Add a data attribute to uniquely identify posts */
+        .post-card[data-post-id] {
+            /* This style is just a placeholder, the attribute itself is for JS */
+        }
 
         .post-header {
             display: flex;
@@ -573,139 +577,207 @@
             }
         }
 
+        // --- Function to create or update a post card element ---
+        // This function is now crucial for efficient DOM updates
+        async function createOrUpdatePostElement(postDoc, likedPostIds, userDetailsMap, currentUserFollowing) {
+            const postData = postDoc.data();
+            const postId = postDoc.id;
+            const postUserId = postData.userId;
+            const content = postData.content;
+            const imageUrl = postData.imageUrl;
+            const timestamp = postData.timestamp ? postData.timestamp.toDate() : new Date();
+            const likesCount = postData.likesCount || 0;
+
+            const isLiked = likedPostIds.includes(postId);
+            
+            const posterInfo = userDetailsMap.get(postUserId) || { username: 'Anonymous', isVerified: false, avatar: '' };
+            const username = posterInfo.username;
+            const isVerified = posterInfo.isVerified;
+            const avatar = posterInfo.avatar;
+
+            let profileCircleContent;
+            if (avatar) {
+                profileCircleContent = `<img src="${avatar}" alt="User Avatar">`;
+            } else {
+                profileCircleContent = username.charAt(0).toUpperCase();
+            }
+
+            const isFollowing = currentUserFollowing.includes(postUserId);
+            const isSelfPost = currentUser.uid === postUserId;
+
+            let postElement = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+
+            if (!postElement) {
+                // Create new element if it doesn't exist
+                postElement = document.createElement('div');
+                postElement.classList.add('post-card');
+                postElement.dataset.postId = postId; // Add data attribute for easy lookup
+                postsContainer.appendChild(postElement); // Append to container
+            }
+
+            // Update innerHTML regardless if new or existing, ensuring latest data
+            postElement.innerHTML = `
+                <div class="post-header">
+                    <div class="post-header-left">
+                        <div class="profile-circle">${profileCircleContent}</div>
+                        <div class="post-username-clickable" data-user-id="${postUserId}">
+                            <span class="post-username">${username}</span>
+                            ${isVerified ? verifiedTickSvgPost : ''}
+                        </div>
+                        <span class="post-time">${formatTimestamp(timestamp)}</span>
+                    </div>
+                    ${!isSelfPost ? `
+                        <button class="follow-button ${isFollowing ? 'following' : ''}" 
+                                data-user-id="${postUserId}"
+                                data-current-state="${isFollowing ? 'following' : 'not-following'}">
+                            ${isFollowing ? 'Following' : 'Follow'}
+                        </button>
+                    ` : ''}
+                </div>
+                <p class="post-content">${content}</p>
+                ${imageUrl ? `<img src="${imageUrl}" alt="Post Image" class="post-image">` : ''}
+                <div class="post-actions">
+                    <div class="post-action-button like-button ${isLiked ? 'liked' : ''}" data-post-id="${postId}">
+                        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                        <span class="like-count">${likesCount}</span>
+                    </div>
+                    <div class="post-action-button comment-button" data-post-id="${postId}">
+                        <i class="far fa-comment"></i>
+                        <span>Comment</span>
+                    </div>
+                </div>
+            `;
+
+            // Re-attach event listeners for the specific post element
+            postElement.querySelector('.like-button')?.addEventListener('click', handleLike);
+            postElement.querySelector('.comment-button')?.addEventListener('click', handleComment);
+            postElement.querySelector('.follow-button')?.addEventListener('click', handleFollow);
+            postElement.querySelector('.post-username-clickable')?.addEventListener('click', handleUsernameClick);
+        }
+
+
         // --- Load Posts Functionality ---
         async function loadPosts() {
-            postsContainer.innerHTML = '<p class="no-posts">Loading posts...</p>'; // Show loading message
+            // Initial loading message
+            postsContainer.innerHTML = '<p class="no-posts">Loading posts...</p>'; 
 
             if (!currentUser) {
                 postsContainer.innerHTML = '<p class="no-posts">Please log in to see posts.</p>';
                 return;
             }
 
+            let initialLoadComplete = false; // Flag to track if initial full load happened
+
             try {
-                // Fetch posts from Firestore without any specific order
                 db.collection('posts')
-                    .limit(50) // Fetch more posts to have a good pool for randomization
-                    .onSnapshot(async (querySnapshot) => {
-                        postsContainer.innerHTML = ''; // Clear previous posts
-
-                        if (querySnapshot.empty) {
-                            postsContainer.innerHTML = '<p class="no-posts">No posts to display yet.</p>';
-                            return;
-                        }
-
-                        // Convert snapshot to an array to shuffle
-                        const posts = [];
-                        querySnapshot.forEach(doc => {
-                            posts.push({ id: doc.id, data: doc.data() });
-                        });
-
-                        shuffleArray(posts); // Shuffle the posts array randomly
-
-                        // Fetch current user's liked posts to show liked state
+                    .limit(50)
+                    .onSnapshot(async (snapshot) => {
+                        // Fetch current user's liked posts to show liked state (do this inside snapshot to get latest)
                         const currentUserLikesDoc = await db.collection('userLikes').doc(currentUser.uid).get();
                         const likedPostIds = currentUserLikesDoc.exists && currentUserLikesDoc.data().likes ? 
                                             currentUserLikesDoc.data().likes : [];
 
-                        // Fetch user data (including avatar and verification status) for all unique post authors
-                        const userIds = [...new Set(posts.map(post => post.data.userId))]; // Get unique IDs
+                        // Optimizing user data fetch: Only fetch if users not already in map or if new users appear
+                        const uniqueUserIdsInSnapshot = new Set(snapshot.docs.map(doc => doc.data().userId));
                         const userDetailsMap = new Map(); // Store user details for quick lookup
 
-                        if (userIds.length > 0) {
-                            const userDocsPromises = userIds.map(id => db.collection('users').doc(id).get());
-                            const userDocs = await Promise.all(userDocsPromises);
+                        // Fetch existing user data that might already be present
+                        document.querySelectorAll('.post-card').forEach(card => {
+                            const userId = card.querySelector('.post-username-clickable')?.dataset.userId;
+                            if (userId && !userDetailsMap.has(userId)) {
+                                const username = card.querySelector('.post-username')?.textContent;
+                                const isVerified = card.querySelector('.verified-tick') !== null;
+                                const avatarImg = card.querySelector('.profile-circle img');
+                                const avatar = avatarImg ? avatarImg.src : '';
+                                userDetailsMap.set(userId, { username, isVerified, avatar });
+                            }
+                        });
 
-                            userDocs.forEach(userDoc => {
+
+                        // Fetch new user data if not already in map
+                        const newUserIdsToFetch = Array.from(uniqueUserIdsInSnapshot).filter(id => !userDetailsMap.has(id));
+                        if (newUserIdsToFetch.length > 0) {
+                            const newUserDocsPromises = newUserIdsToFetch.map(id => db.collection('users').doc(id).get());
+                            const newUserDocs = await Promise.all(newUserDocsPromises);
+                            newUserDocs.forEach(userDoc => {
                                 if (userDoc.exists) {
                                     userDetailsMap.set(userDoc.id, {
                                         username: userDoc.data().username || 'Anonymous',
                                         isVerified: userDoc.data().isVerified || false,
-                                        avatar: userDoc.data().avatar || '' // Fetch avatar URL
+                                        avatar: userDoc.data().avatar || ''
                                     });
                                 } else {
                                     userDetailsMap.set(userDoc.id, { username: 'Anonymous', isVerified: false, avatar: '' });
                                 }
                             });
                         }
-
-                        posts.forEach(post => {
-                            const postData = post.data;
-                            const postId = post.id; // Document ID of the post
-                            const postUserId = postData.userId; // Get the ID of the user who posted
-                            const content = postData.content;
-                            const imageUrl = postData.imageUrl; // Get the image URL from post data
-                            const timestamp = postData.timestamp ? postData.timestamp.toDate() : new Date();
-                            const likesCount = postData.likesCount || 0; // Get likes count, default to 0
-
-                            const isLiked = likedPostIds.includes(postId);
-                            
-                            const posterInfo = userDetailsMap.get(postUserId) || { username: 'Anonymous', isVerified: false, avatar: '' };
-                            const username = posterInfo.username;
-                            const isVerified = posterInfo.isVerified;
-                            const avatar = posterInfo.avatar; // Get avatar URL
-
-                            // Determine content for the profile circle (avatar or initial)
-                            let profileCircleContent;
-                            if (avatar) {
-                                profileCircleContent = `<img src="${avatar}" alt="User Avatar">`;
-                            } else {
-                                profileCircleContent = username.charAt(0).toUpperCase();
+                        
+                        // Handle changes based on type (added, modified, removed)
+                        if (!initialLoadComplete) {
+                            // On initial load, clear and then add all posts in a shuffled order
+                            postsContainer.innerHTML = '';
+                            if (snapshot.empty) {
+                                postsContainer.innerHTML = '<p class="no-posts">No posts to display yet.</p>';
+                                return;
+                            }
+                            const posts = [];
+                            snapshot.forEach(doc => {
+                                posts.push(doc); // Store the full doc
+                            });
+                            shuffleArray(posts); // Shuffle the full docs
+                            for (const postDoc of posts) {
+                                await createOrUpdatePostElement(postDoc, likedPostIds, userDetailsMap, currentUserFollowing);
+                            }
+                            initialLoadComplete = true; // Mark initial load as complete
+                        } else {
+                            // For subsequent updates, process individual document changes
+                            if (snapshot.docChanges().length === 0 && snapshot.empty) {
+                                postsContainer.innerHTML = '<p class="no-posts">No posts to display yet.</p>';
+                                return;
+                            } else if (snapshot.docChanges().length === 0) {
+                                // No changes, or only metadata changes (e.g., from local optimistic updates)
+                                return; // Do nothing, UI is already up-to-date or will be handled by optimistic updates
                             }
 
-                            // Determine if current user is following this post's user
-                            const isFollowing = currentUserFollowing.includes(postUserId);
-                            const isSelfPost = currentUser.uid === postUserId; // Check if it's the current user's post
+                            snapshot.docChanges().forEach(async change => {
+                                const postDoc = change.doc;
+                                const postId = postDoc.id;
 
-                            const postElement = document.createElement('div');
-                            postElement.classList.add('post-card');
-                            postElement.innerHTML = `
-                                <div class="post-header">
-                                    <div class="post-header-left">
-                                        <div class="profile-circle">${profileCircleContent}</div>
-                                        <div class="post-username-clickable" data-user-id="${postUserId}">
-                                            <span class="post-username">${username}</span>
-                                            ${isVerified ? verifiedTickSvgPost : ''}
-                                        </div>
-                                        <span class="post-time">${formatTimestamp(timestamp)}</span>
-                                    </div>
-                                    ${!isSelfPost ? `
-                                        <button class="follow-button ${isFollowing ? 'following' : ''}" 
-                                                data-user-id="${postUserId}"
-                                                data-current-state="${isFollowing ? 'following' : 'not-following'}">
-                                            ${isFollowing ? 'Following' : 'Follow'}
-                                        </button>
-                                    ` : ''}
-                                </div>
-                                <p class="post-content">${content}</p>
-                                ${imageUrl ? `<img src="${imageUrl}" alt="Post Image" class="post-image">` : ''} <div class="post-actions">
-                                    <div class="post-action-button like-button ${isLiked ? 'liked' : ''}" data-post-id="${postId}">
-                                        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
-                                        <span class="like-count">${likesCount}</span>
-                                    </div>
-                                    <div class="post-action-button comment-button" data-post-id="${postId}">
-                                        <i class="far fa-comment"></i>
-                                        <span>Comment</span>
-                                    </div>
-                                </div>
-                            `;
-                            postsContainer.appendChild(postElement);
-                        });
+                                if (change.type === 'added') {
+                                    // For 'added' posts, we need to decide where to add them.
+                                    // Since you shuffle, adding new posts randomly would be complex.
+                                    // For simplicity and to avoid re-shuffling on every new post,
+                                    // new posts will be appended. If strict shuffling on every change
+                                    // is desired, you'd need to re-render the whole list (which we want to avoid).
+                                    // We add it only if it's not already present to avoid duplicates during transitions.
+                                    if (!document.querySelector(`.post-card[data-post-id="${postId}"]`)) {
+                                         await createOrUpdatePostElement(postDoc, likedPostIds, userDetailsMap, currentUserFollowing);
+                                         // Consider if you want to insert them at a random position or at the top
+                                         // For now, they'll just append.
+                                    }
+                                } else if (change.type === 'modified') {
+                                    // Update existing post
+                                    await createOrUpdatePostElement(postDoc, likedPostIds, userDetailsMap, currentUserFollowing);
+                                } else if (change.type === 'removed') {
+                                    // Remove post
+                                    const elementToRemove = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+                                    if (elementToRemove) {
+                                        elementToRemove.remove();
+                                    }
+                                }
+                            });
 
-                        // Attach event listeners to all dynamically created elements
-                        postsContainer.querySelectorAll('.like-button').forEach(button => {
-                            button.addEventListener('click', handleLike);
-                        });
-                        postsContainer.querySelectorAll('.comment-button').forEach(button => {
-                            button.addEventListener('click', handleComment);
-                        });
-                        postsContainer.querySelectorAll('.follow-button').forEach(button => {
-                            button.addEventListener('click', handleFollow);
-                        });
-                        // NEW: Attach event listeners to username clickables
-                        postsContainer.querySelectorAll('.post-username-clickable').forEach(element => {
-                            element.addEventListener('click', handleUsernameClick);
-                        });
-
+                            // If after all changes, the container is empty, show no posts message
+                            if (postsContainer.children.length === 0) {
+                                postsContainer.innerHTML = '<p class="no-posts">No posts to display yet.</p>';
+                            } else {
+                                // If there was a "No posts" message before, remove it if posts are now visible
+                                const noPostsMessage = postsContainer.querySelector('.no-posts');
+                                if (noPostsMessage && postsContainer.children.length > 1) { // >1 because the message itself is a child
+                                    noPostsMessage.remove();
+                                }
+                            }
+                        }
                     }, (error) => {
                         console.error("Error loading posts with snapshot:", error);
                         postsContainer.innerHTML = '<p class="no-posts error">Error loading posts. Please try again.</p>';
@@ -731,69 +803,110 @@
             const postRef = db.collection('posts').doc(postId);
             const userLikesRef = db.collection('userLikes').doc(currentUser.uid);
 
+            // Optimistic UI update: Change UI immediately
+            let currentLikesElement = likeButton.querySelector('.like-count');
+            let currentLikes = parseInt(currentLikesElement.textContent);
+            
+            if (isLiked) {
+                likeButton.classList.remove('liked');
+                likeButton.querySelector('i').classList.replace('fas', 'far');
+                currentLikesElement.textContent = Math.max(0, currentLikes - 1);
+            } else {
+                likeButton.classList.add('liked');
+                likeButton.querySelector('i').classList.replace('far', 'fas');
+                currentLikesElement.textContent = currentLikes + 1;
+            }
+
             try {
                 await db.runTransaction(async (transaction) => {
                     const postDoc = await transaction.get(postRef);
                     const userLikesDoc = await transaction.get(userLikesRef);
 
-                    if (!postDoc.exists) throw "Post does not exist!";
+                    if (!postDoc.exists) {
+                        // If post disappeared between click and transaction, revert optimistic update
+                        throw new Error("Post does not exist!");
+                    }
 
-                    const currentLikes = postDoc.data().likesCount || 0;
-                    
-                    if (isLiked) {
-                        // Unlike the post
-                        const newLikes = Math.max(0, currentLikes - 1); // Ensure likes don't go negative
-                        transaction.update(postRef, { likesCount: newLikes });
-                        if (userLikesDoc.exists) {
+                    // Re-read current likes from Firestore doc within transaction for accuracy
+                    const likesFromDb = postDoc.data().likesCount || 0;
+                    let newLikesCount;
+
+                    // Double check if state changed externally (e.g., another device)
+                    let shouldBeLikedInDb = userLikesDoc.exists && userLikesDoc.data().likes && userLikesDoc.data().likes.includes(postId);
+
+                    if (isLiked) { // User clicked to UNLIKE
+                        if (shouldBeLikedInDb) { // If it was indeed liked in DB, proceed with unliking
+                            newLikesCount = Math.max(0, likesFromDb - 1);
+                            transaction.update(postRef, { likesCount: newLikesCount });
                             transaction.update(userLikesRef, {
                                 likes: firebase.firestore.FieldValue.arrayRemove(postId)
                             });
-                        }
-                        // Update UI immediately (optimistic update)
-                        likeButton.classList.remove('liked');
-                        likeButton.querySelector('i').classList.replace('fas', 'far');
-                        likeButton.querySelector('.like-count').textContent = newLikes;
-                    } else {
-                        // Like the post
-                        const newLikes = currentLikes + 1;
-                        transaction.update(postRef, { likesCount: newLikes });
-                        if (userLikesDoc.exists) {
-                            transaction.update(userLikesRef, {
-                                likes: firebase.firestore.FieldValue.arrayUnion(postId)
-                            });
                         } else {
-                            // If userLikes document doesn't exist, create it
-                            transaction.set(userLikesRef, { likes: [postId] });
+                            // Edge case: UI said liked, but DB said not. Do nothing or log.
+                            console.warn("UI state mismatch: Tried to unlike, but post not found in userLikes. Reverting UI.");
+                            // Revert optimistic UI for safety, `onSnapshot` will correct it eventually
+                            likeButton.classList.add('liked');
+                            likeButton.querySelector('i').classList.replace('far', 'fas');
+                            currentLikesElement.textContent = likesFromDb;
                         }
-                        // Update UI immediately (optimistic update)
-                        likeButton.classList.add('liked');
-                        likeButton.querySelector('i').classList.replace('far', 'fas');
-                        likeButton.querySelector('.like-count').textContent = newLikes;
+                    } else { // User clicked to LIKE
+                        if (!shouldBeLikedInDb) { // If it was indeed not liked in DB, proceed with liking
+                            newLikesCount = likesFromDb + 1;
+                            transaction.update(postRef, { likesCount: newLikesCount });
+                            if (userLikesDoc.exists) {
+                                transaction.update(userLikesRef, {
+                                    likes: firebase.firestore.FieldValue.arrayUnion(postId)
+                                });
+                            } else {
+                                transaction.set(userLikesRef, { likes: [postId] });
+                            }
+                        } else {
+                            // Edge case: UI said not liked, but DB said liked. Do nothing or log.
+                            console.warn("UI state mismatch: Tried to like, but post already found in userLikes. Reverting UI.");
+                            // Revert optimistic UI for safety
+                            likeButton.classList.remove('liked');
+                            likeButton.querySelector('i').classList.replace('fas', 'far');
+                            currentLikesElement.textContent = likesFromDb;
+                        }
+                    }
 
-                        // --- NEW: Create a notification for the post author (conceptual) ---
-                        // You'd need to fetch the post to get the author's userId
-                        const postAuthorId = postDoc.data().userId; 
-                        if (postAuthorId && postAuthorId !== currentUser.uid) { // Don't notify user about their own likes
-                            // This would be better done in a Cloud Function to ensure reliability and security
-                            // but for a client-side example, it's placed here.
-                            await db.collection('notifications').add({
-                                recipientId: postAuthorId,
-                                senderId: currentUser.uid,
-                                type: 'like',
-                                message: `${usernameDisplay.textContent} liked your post.`, 
-                                isRead: false,
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        }
+                    // --- Create a notification for the post author (conceptual) ---
+                    const postAuthorId = postDoc.data().userId; 
+                    // Only send notification if it was a 'like' action and not self-liking
+                    if (!isLiked && postAuthorId && postAuthorId !== currentUser.uid) { 
+                        const currentUserName = usernameDisplay.textContent; 
+                        await db.collection('notifications').add({
+                            recipientId: postAuthorId,
+                            senderId: currentUser.uid,
+                            type: 'like',
+                            message: `${currentUserName} liked your post.`, 
+                            isRead: false,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     }
                 });
 
             } catch (error) {
                 console.error("Error liking/unliking post:", error);
                 alert('Failed to update like status. Please try again.');
-                // Revert UI if transaction fails (rollback optimistic update)
-                // This part would be more complex and usually handled by the onSnapshot listener eventually correcting it
+                // Revert UI if transaction fails unexpectedly (less common with transactions)
+                // The onSnapshot listener will ultimately correct the UI state anyway.
             }
+        }
+
+        // --- Helper function to update all follow buttons for a specific user ---
+        function updateFollowButtonsForUser(userId, isFollowing) {
+            document.querySelectorAll(`.follow-button[data-user-id="${userId}"]`).forEach(button => {
+                if (isFollowing) {
+                    button.textContent = 'Following';
+                    button.classList.add('following');
+                    button.dataset.currentState = 'following';
+                } else {
+                    button.textContent = 'Follow';
+                    button.classList.remove('following');
+                    button.dataset.currentState = 'not-following';
+                }
+            });
         }
 
         // --- Handle Follow/Unfollow Functionality ---
@@ -803,18 +916,19 @@
             let currentState = button.dataset.currentState; // 'following' or 'not-following'
 
             if (!currentUser || currentUser.uid === targetUserId) {
-                // Should already be hidden for self-posts, but good to double check
                 console.warn("Attempted to follow/unfollow self or no current user.");
                 return;
             }
 
             button.disabled = true; // Disable button to prevent multiple clicks
             const originalText = button.textContent;
-            button.textContent = '...';
+            button.textContent = '...'; // Show loading state
 
             try {
                 const currentUserRef = db.collection('users').doc(currentUser.uid);
                 const targetUserRef = db.collection('users').doc(targetUserId);
+
+                let newIsFollowingState = false; // Determine the new state after transaction
 
                 await db.runTransaction(async (transaction) => {
                     const currentUserDoc = await transaction.get(currentUserRef);
@@ -824,52 +938,62 @@
                         throw new Error("User data not found for follow action.");
                     }
 
-                    if (currentState === 'following') {
-                        // Unfollow logic
-                        transaction.update(currentUserRef, {
-                            following: firebase.firestore.FieldValue.arrayRemove(targetUserId)
-                        });
-                        transaction.update(targetUserRef, {
-                            followers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                        });
-                        currentState = 'not-following';
-                    } else {
-                        // Follow logic
-                        transaction.update(currentUserRef, {
-                            following: firebase.firestore.FieldValue.arrayUnion(targetUserId)
-                        });
-                        transaction.update(targetUserRef, {
-                            followers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                        });
-                        currentState = 'following';
+                    const currentUserFollowingInDb = currentUserDoc.data().following || [];
+                    const targetUserFollowersInDb = targetUserDoc.data().followers || [];
 
-                        // --- NEW: Create a notification for the target user (conceptual) ---
-                        // You'd need to get current user's username for the message
-                        const currentUserName = usernameDisplay.textContent; 
-                        await db.collection('notifications').add({
-                            recipientId: targetUserId,
-                            senderId: currentUser.uid,
-                            type: 'follow',
-                            message: `${currentUserName} started following you.`,
-                            isRead: false,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                    if (currentState === 'following') { // Current UI state is 'Following', so unfollow
+                        if (currentUserFollowingInDb.includes(targetUserId)) { // Double-check DB state
+                            transaction.update(currentUserRef, {
+                                following: firebase.firestore.FieldValue.arrayRemove(targetUserId)
+                            });
+                            transaction.update(targetUserRef, {
+                                followers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                            });
+                            newIsFollowingState = false; // Will be unfollowing
+                        } else {
+                            console.warn("UI state mismatch: Tried to unfollow, but user not found in following list.");
+                            newIsFollowingState = false; // Ensure final state is unfollowing if DB says so
+                        }
+                    } else { // Current UI state is 'Follow', so follow
+                        if (!currentUserFollowingInDb.includes(targetUserId)) { // Double-check DB state
+                            transaction.update(currentUserRef, {
+                                following: firebase.firestore.FieldValue.arrayUnion(targetUserId)
+                            });
+                            transaction.update(targetUserRef, {
+                                followers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                            });
+                            newIsFollowingState = true; // Will be following
+
+                            // Create a notification for the target user
+                            const currentUserName = usernameDisplay.textContent; 
+                            await db.collection('notifications').add({
+                                recipientId: targetUserId,
+                                senderId: currentUser.uid,
+                                type: 'follow',
+                                message: `${currentUserName} started following you.`,
+                                isRead: false,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        } else {
+                            console.warn("UI state mismatch: Tried to follow, but user already in following list.");
+                            newIsFollowingState = true; // Ensure final state is following if DB says so
+                        }
                     }
                 });
 
-                // Update UI based on new state
-                button.dataset.currentState = currentState;
-                if (currentState === 'following') {
-                    button.textContent = 'Following';
-                    button.classList.add('following');
-                    // Add to local currentUserFollowing array
-                    currentUserFollowing.push(targetUserId); 
+                // --- OPTIMISTIC UI UPDATE ACROSS ALL POSTS BY THE USER ---
+                // Update local currentUserFollowing array
+                if (newIsFollowingState) {
+                    if (!currentUserFollowing.includes(targetUserId)) {
+                        currentUserFollowing.push(targetUserId);
+                    }
                 } else {
-                    button.textContent = 'Follow';
-                    button.classList.remove('following');
-                    // Remove from local currentUserFollowing array
                     currentUserFollowing = currentUserFollowing.filter(id => id !== targetUserId);
                 }
+                
+                // Update all buttons related to this user ID
+                updateFollowButtonsForUser(targetUserId, newIsFollowingState);
+                
                 button.disabled = false; // Re-enable button
 
             } catch (error) {
