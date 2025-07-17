@@ -355,6 +355,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             text-align: left;
+            margin-top: 20px; /* Added margin to separate from profile card */
         }
 
         .profile-posts-section h2 {
@@ -431,6 +432,18 @@
             white-space: pre-wrap;
             word-wrap: break-word;
             margin-bottom: 10px;
+        }
+
+        /* NEW: Styles for post images */
+        .post-item .post-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: block; /* Ensures image takes its own line */
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         /* Style for editable textarea */
@@ -800,7 +813,7 @@
         <div class="profile-posts-section">
             <h2>My Posts</h2>
             <div id="userPostsList">
-                <p class="no-posts">Loading your posts...</p>
+                <p class="no-posts">No posts to display yet.</p>
             </div>
         </div>
     </div>
@@ -884,7 +897,7 @@
         const postsCountSpan = document.getElementById('postsCount');
         const followersCountSpan = document.getElementById('followersCount');
         const followingCountSpan = document.getElementById('followingCount');
-        const userPostsListDiv = document.getElementById('userPostsList');
+        const userPostsListDiv = document.getElementById('userPostsList'); // This element is now added
         const infoMessage = document.getElementById('infoMessage');
 
         const avatarModal = document.getElementById('avatarModal');
@@ -980,8 +993,7 @@
                 currentUser = user;
                 console.log("User is logged in:", user.email, "UID:", user.uid);
                 await loadUserProfile(currentUser.uid);
-                await loadUserPosts(currentUser.uid);
-
+                loadUserPosts(currentUser.uid); // Now uncommented to load posts
             } else {
                 console.log("No user logged in. Redirecting to index.html");
                 window.location.href = 'index.html';
@@ -1012,7 +1024,10 @@
                             profileVerifiedTickContainer.innerHTML = '';
                         }
 
-                        postsCountSpan.textContent = "Loading...";
+                        // Fetch posts count from the 'posts' collection
+                        const postsSnapshot = await db.collection('posts').where('userId', '==', userId).get();
+                        postsCountSpan.textContent = postsSnapshot.size;
+
                         followersCountSpan.textContent = (currentUserData.followers && currentUserData.followers.length) || 0;
                         followingCountSpan.textContent = (currentUserData.following && currentUserData.following.length) || 0;
 
@@ -1293,133 +1308,291 @@
             profileBioDiv.classList.remove('editing');
         }
 
-        // Helper function to check if user liked a post
-        function isUserLikedPost(postLikesArray, userId) {
-            return postLikesArray && Array.isArray(postLikesArray) && postLikesArray.includes(userId);
-        }
-
-        // --- Load User's Own Posts ---
+        // --- NEW: Load User's Posts ---
         async function loadUserPosts(userId) {
-            userPostsListDiv.innerHTML = '<p class="no-posts">Loading your posts...</p>';
-            console.log("Attempting to load posts for userId:", userId);
-
+            userPostsList.innerHTML = '<p class="no-posts">Loading posts...</p>';
             try {
-                // Fetch the current user's data once
-                const userDoc = await db.collection('users').doc(userId).get();
-                const userData = userDoc.exists ? userDoc.data() : null;
-
+                // Fetch posts from Firestore, ordered by timestamp descending, filtered by userId
                 db.collection('posts')
                     .where('userId', '==', userId)
                     .orderBy('timestamp', 'desc')
-                    .onSnapshot(snapshot => {
-                        userPostsListDiv.innerHTML = '';
+                    .onSnapshot(async (querySnapshot) => {
+                        userPostsList.innerHTML = ''; // Clear previous posts
 
-                        if (snapshot.empty) {
-                            console.log("No posts found for userId:", userId);
-                            userPostsListDiv.innerHTML = '<p class="no-posts">You haven\'t made any posts yet.</p>';
-                            postsCountSpan.textContent = 0;
+                        if (querySnapshot.empty) {
+                            userPostsList.innerHTML = '<p class="no-posts">No posts from you yet.</p>';
                             return;
                         }
 
-                        console.log("Found", snapshot.size, "posts for userId:", userId);
-                        postsCountSpan.textContent = snapshot.size;
+                        // Fetch current user's liked posts to show liked state
+                        const currentUserLikesDoc = await db.collection('userLikes').doc(currentUser.uid).get();
+                        const likedPostIds = currentUserLikesDoc.exists && currentUserLikesDoc.data().likes ? 
+                                            currentUserLikesDoc.data().likes : [];
 
-                        snapshot.forEach(doc => {
+                        // These variables (currentUsername, currentUserData.avatar, currentUserData.isVerified)
+                        // are already available globally from loadUserProfile
+                        const userDisplayName = currentUsername;
+                        const userAvatar = currentUserData.avatar || '';
+                        const isUserVerified = currentUserData.isVerified || false;
+
+                        querySnapshot.forEach(doc => {
                             const postData = doc.data();
                             const postId = doc.id;
                             const content = postData.content;
-                            const imageUrl = postData.imageUrl || null;
+                            const imageUrl = postData.imageUrl;
+                            const timestamp = postData.timestamp ? postData.timestamp.toDate() : new Date();
+                            const likesCount = postData.likesCount || 0;
 
-                            const timestamp = postData.timestamp && typeof postData.timestamp.toDate === 'function'
-                                              ? postData.timestamp.toDate()
-                                              : new Date();
+                            const isLiked = likedPostIds.includes(postId);
 
-                            const likesArray = postData.likes || [];
-                            const likesCount = likesArray.length;
-                            const commentsCount = postData.commentsCount || 0;
-
-                            const likedByCurrentUser = isUserLikedPost(likesArray, currentUser.uid);
-
-                            // **Updated: Get user-specific info for the post header**
-                            const postCreatorUsername = userData ? userData.username : 'Unknown User';
-                            const postCreatorAvatar = userData ? userData.avatar : '';
-                            const isUserVerified = userData ? userData.isVerified : false; // **NEW: Check if user is verified**
-
-                            // **Updated: Create avatar HTML and add verified tick if applicable**
-                            let userAvatarHtml;
-                            if (postCreatorAvatar) {
-                                userAvatarHtml = `<img src="${postCreatorAvatar}" alt="User Avatar">`;
+                            let postAvatarContent;
+                            if (userAvatar) {
+                                postAvatarContent = `<img src="${userAvatar}" alt="Profile Avatar">`;
                             } else {
-                                userAvatarHtml = postCreatorUsername.charAt(0).toUpperCase();
+                                postAvatarContent = userDisplayName.charAt(0).toUpperCase();
                             }
-
-                            // **NEW: Conditional verified tick for post cards**
-                            const verifiedTickInPost = isUserVerified ? verifiedTickSvgPost : '';
-
+                            
                             const postElement = document.createElement('div');
-                            postElement.classList.add('post-item');
-                            postElement.setAttribute('data-postid', postId);
-
-                            const imageHtml = imageUrl ? `<img src="${imageUrl}" alt="Post Image" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px;">` : '';
-
+                            postElement.classList.add('post-item'); // Changed from post-card to post-item
                             postElement.innerHTML = `
                                 <div class="post-header">
                                     <div class="user-info-in-post">
-                                        <div class="user-avatar-in-post">${userAvatarHtml}</div>
-                                        <span class="username-display">${postCreatorUsername}${verifiedTickInPost}</span> </div>
-                                    <div class="post-options-menu">
+                                        <div class="user-avatar-in-post">${postAvatarContent}</div>
+                                        <span class="username-display">${userDisplayName}</span>
+                                        ${isUserVerified ? verifiedTickSvgPost : ''}
+                                    </div>
+                                    <div class="post-options-menu" data-post-id="${postId}">
                                         ${threeDotsSvg}
                                         <div class="dropdown-content">
-                                            <button class="edit-post-btn" data-postid="${postId}">Edit Post</button>
-                                            <button class="delete-post-btn" data-postid="${postId}">Delete Post</button>
+                                            <button class="edit-post-btn" data-post-id="${postId}">Edit Post</button>
+                                            <button class="delete-post-btn" data-post-id="${postId}">Delete Post</button>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="post-content">${content}</p>
-                                ${imageHtml}
+                                <p class="post-content" data-original-content="${content}">${content}</p>
+                                ${imageUrl ? `<img src="${imageUrl}" alt="Post Image" class="post-image">` : ''}
                                 <div class="post-actions">
-                                    <button class="like-btn ${likedByCurrentUser ? 'liked' : ''}" data-postid="${postId}" data-liked="${likedByCurrentUser ? 'true' : 'false'}">
-                                        <i class="${likedByCurrentUser ? 'fas fa-heart' : 'far fa-heart'}"></i>
+                                    <button class="like-btn ${isLiked ? 'liked' : ''}" data-post-id="${postId}">
+                                        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
                                         <span>${likesCount}</span>
                                     </button>
-                                    <button class="comment-btn" data-postid="${postId}">
+                                    <button class="comment-btn" data-post-id="${postId}">
                                         <i class="far fa-comment"></i>
-                                        <span>${commentsCount > 0 ? commentsCount : ''}</span> </button>
-                                    <button class="share-btn">
-                                        <i class="fas fa-share-alt"></i>
-                                        <span>Share</span>
-                                    </button>
+                                        <span></span> </button>
                                 </div>
                                 <div class="post-time-bottom">${formatTimestamp(timestamp)}</div>
                             `;
-                            userPostsListDiv.appendChild(postElement);
+                            userPostsList.appendChild(postElement);
                         });
 
-                        userPostsListDiv.querySelectorAll('.like-btn').forEach(button => {
-                            button.addEventListener('click', handleLikePost);
+                        // Attach event listeners to newly created posts
+                        userPostsList.querySelectorAll('.like-btn').forEach(button => {
+                            button.addEventListener('click', handleLike);
                         });
-                        userPostsListDiv.querySelectorAll('.comment-btn').forEach(button => {
-                            button.addEventListener('click', handleCommentClick);
+                        userPostsList.querySelectorAll('.comment-btn').forEach(button => {
+                            button.addEventListener('click', handleComment);
                         });
-                        userPostsListDiv.querySelectorAll('.post-options-menu').forEach(menu => {
-                            menu.addEventListener('click', (event) => toggleDropdown(event.currentTarget.querySelector('.dropdown-content'), event));
+                        userPostsList.querySelectorAll('.post-options-menu').forEach(menu => {
+                            menu.addEventListener('click', (event) => toggleDropdown(menu.querySelector('.dropdown-content'), event));
                         });
-                        userPostsListDiv.querySelectorAll('.edit-post-btn').forEach(button => {
+                        userPostsList.querySelectorAll('.edit-post-btn').forEach(button => {
                             button.addEventListener('click', handleEditPost);
                         });
-                        userPostsListDiv.querySelectorAll('.delete-post-btn').forEach(button => {
+                        userPostsList.querySelectorAll('.delete-post-btn').forEach(button => {
                             button.addEventListener('click', handleDeletePost);
                         });
 
-                    }, error => {
-                        console.error("Error listening to user posts:", error);
-                        userPostsListDiv.innerHTML = `<p class="no-posts error">Error loading your posts. Please check your internet connection or Firebase setup. Details: ${error.message}</p>`;
+                    }, (error) => {
+                        console.error("Error loading user's posts with snapshot:", error);
+                        userPostsList.innerHTML = '<p class="no-posts error">Error loading posts. Please try again.</p>';
                     });
 
             } catch (error) {
-                console.error("Error setting up post listener:", error);
-                userPostsListDiv.innerHTML = `<p class="no-posts error">Error setting up post listener. Details: ${error.message}</p>`;
+                console.error("Initial error fetching user's posts:", error);
+                userPostsList.innerHTML = '<p class="no-posts error">Error loading posts. Please try again.</p>';
             }
+        }
+
+        // --- Handle Like Functionality ---
+        async function handleLike(event) {
+            if (!currentUser) {
+                showMessage('You must be logged in to like posts.', 'error');
+                return;
+            }
+
+            const likeButton = event.currentTarget;
+            const postId = likeButton.dataset.postId;
+            let isLiked = likeButton.classList.contains('liked');
+
+            const postRef = db.collection('posts').doc(postId);
+            const userLikesRef = db.collection('userLikes').doc(currentUser.uid);
+
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const postDoc = await transaction.get(postRef);
+                    const userLikesDoc = await transaction.get(userLikesRef);
+
+                    if (!postDoc.exists) throw "Post does not exist!";
+
+                    const currentLikes = postDoc.data().likesCount || 0;
+                    
+                    if (isLiked) {
+                        const newLikes = Math.max(0, currentLikes - 1);
+                        transaction.update(postRef, { likesCount: newLikes });
+                        if (userLikesDoc.exists) {
+                            transaction.update(userLikesRef, {
+                                likes: firebase.firestore.FieldValue.arrayRemove(postId)
+                            });
+                        }
+                        likeButton.classList.remove('liked');
+                        likeButton.querySelector('i').classList.replace('fas', 'far');
+                        likeButton.querySelector('span').textContent = newLikes;
+                    } else {
+                        const newLikes = currentLikes + 1;
+                        transaction.update(postRef, { likesCount: newLikes });
+                        if (userLikesDoc.exists) {
+                            transaction.update(userLikesRef, {
+                                likes: firebase.firestore.FieldValue.arrayUnion(postId)
+                            });
+                        } else {
+                            transaction.set(userLikesRef, { likes: [postId] });
+                        }
+                        likeButton.classList.add('liked');
+                        likeButton.querySelector('i').classList.replace('far', 'fas');
+                        likeButton.querySelector('span').textContent = newLikes;
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error liking/unliking post:", error);
+                showMessage('Failed to update like status. Please try again.', 'error');
+            }
+        }
+
+        // --- Handle Comment Functionality ---
+        function handleComment(event) {
+            const postId = event.currentTarget.dataset.postId;
+            window.location.href = `comments.html?postId=${postId}`;
+        }
+
+        // --- Handle Edit Post ---
+        async function handleEditPost(event) {
+            const postId = event.currentTarget.dataset.postId;
+            const postElement = event.currentTarget.closest('.post-item');
+            const postContentElement = postElement.querySelector('.post-content');
+            const dropdown = event.currentTarget.closest('.dropdown-content');
+
+            // Hide the dropdown immediately
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+
+            // Ensure we are not already editing this post
+            if (postContentElement.classList.contains('editing')) {
+                return;
+            }
+
+            const originalContent = postContentElement.dataset.originalContent || postContentElement.textContent.trim();
+
+            // Create textarea for editing
+            const textarea = document.createElement('textarea');
+            textarea.classList.add('post-content', 'editing');
+            textarea.value = originalContent;
+
+            // Create Save and Cancel buttons
+            const editControls = document.createElement('div');
+            editControls.classList.add('edit-controls');
+            editControls.innerHTML = `
+                <button class="save-btn">Save</button>
+                <button class="cancel-btn">Cancel</button>
+            `;
+
+            // Replace content and append controls
+            postContentElement.replaceWith(textarea);
+            postElement.appendChild(editControls);
+
+            // Hide three dots menu while editing
+            postElement.querySelector('.post-options-menu').style.display = 'none';
+            
+            // Event listeners for Save/Cancel
+            editControls.querySelector('.save-btn').addEventListener('click', async () => {
+                const newContent = textarea.value.trim();
+                if (newContent !== originalContent) {
+                    try {
+                        await db.collection('posts').doc(postId).update({
+                            content: newContent
+                        });
+                        showMessage('Post updated successfully!', 'success');
+                    } catch (error) {
+                        console.error('Error updating post:', error);
+                        showMessage('Failed to update post. Please try again.', 'error');
+                    }
+                }
+                // Revert to display mode
+                revertPostToDisplayMode(postElement, postId, newContent || originalContent);
+            });
+
+            editControls.querySelector('.cancel-btn').addEventListener('click', () => {
+                // Revert to display mode with original content
+                revertPostToDisplayMode(postElement, postId, originalContent);
+            });
+        }
+
+        // Helper function to revert post content back to display mode
+        function revertPostToDisplayMode(postElement, postId, content) {
+            const textarea = postElement.querySelector('.post-content.editing');
+            const editControls = postElement.querySelector('.edit-controls');
+
+            const newContentDisplay = document.createElement('p');
+            newContentDisplay.classList.add('post-content');
+            newContentDisplay.textContent = content;
+            newContentDisplay.dataset.originalContent = content; // Update original content
+
+            if (textarea) textarea.replaceWith(newContentDisplay);
+            if (editControls) editControls.remove();
+
+            // Show three dots menu again
+            postElement.querySelector('.post-options-menu').style.display = '';
+        }
+
+        // --- Handle Delete Post ---
+        async function handleDeletePost(event) {
+            const postId = event.currentTarget.dataset.postId;
+            const dropdown = event.currentTarget.closest('.dropdown-content');
+
+            // Hide the dropdown immediately
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+
+            if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                try {
+                    // Delete the post document
+                    await db.collection('posts').doc(postId).delete();
+
+                    // Remove the post from any userLikes documents where it might be liked
+                    const userLikesSnapshot = await db.collection('userLikes').where('likes', 'array-contains', postId).get();
+                    const batch = db.batch();
+                    userLikesSnapshot.forEach(doc => {
+                        const userLikesRef = db.collection('userLikes').doc(doc.id);
+                        batch.update(userLikesRef, {
+                            likes: firebase.firestore.FieldValue.arrayRemove(postId)
+                        });
+                    });
+                    await batch.commit();
+
+                    showMessage('Post deleted successfully!', 'success');
+                    // The onSnapshot in loadUserPosts will automatically remove the post from the UI
+                } catch (error) {
+                    console.error('Error deleting post:', error);
+                    showMessage('Failed to delete post. Please try again.', 'error');
+                }
+            }
+        }
+
+        // Helper function to check if user liked a post
+        function isUserLikedPost(postLikesArray, userId) {
+            return postLikesArray && Array.isArray(postLikesArray) && postLikesArray.includes(userId);
         }
 
         // --- Toggle Dropdown Menu (Universal Function) ---
@@ -1435,151 +1608,6 @@
             });
 
             dropdownElement.classList.toggle('show');
-        }
-
-        // --- Handle Edit Post (In-Page) ---
-        function handleEditPost(event) {
-            event.stopPropagation();
-            const postId = event.currentTarget.dataset.postid;
-            const postItem = document.querySelector(`.post-item[data-postid="${postId}"]`);
-            if (!postItem) return;
-
-            const postContentElement = postItem.querySelector('.post-content');
-            const originalContent = postContentElement.textContent;
-
-            const dropdown = postItem.querySelector('.dropdown-content');
-            if (dropdown) dropdown.classList.remove('show');
-
-            const textarea = document.createElement('textarea');
-            textarea.classList.add('post-content', 'editing');
-            textarea.value = originalContent;
-            postContentElement.replaceWith(textarea);
-
-            const optionsMenu = postItem.querySelector('.post-options-menu');
-            optionsMenu.style.display = 'none';
-
-            const postActionsDiv = postItem.querySelector('.post-actions');
-            const editControls = document.createElement('div');
-            editControls.classList.add('edit-controls');
-            editControls.innerHTML = `
-                <button class="save-btn" data-postid="${postId}">Save</button>
-                <button class="cancel-btn" data-original-content="${originalContent}">Cancel</button>
-            `;
-            postActionsDiv.insertAdjacentElement('beforebegin', editControls);
-
-            editControls.querySelector('.save-btn').addEventListener('click', async (e) => {
-                const newContent = textarea.value.trim();
-                if (newContent !== originalContent) {
-                    try {
-                        await db.collection('posts').doc(postId).update({
-                            content: newContent
-                        });
-                        showMessage('Post updated successfully!', 'success');
-                    } catch (error) {
-                        console.error('Error updating post:', error);
-                        showMessage('Failed to update post.', 'error');
-                    }
-                }
-                revertPostToDisplayMode(postItem, newContent || originalContent);
-            });
-
-            editControls.querySelector('.cancel-btn').addEventListener('click', (e) => {
-                const original = e.currentTarget.dataset.originalContent; // Corrected: Use dataset property directly
-                revertPostToDisplayMode(postItem, original);
-            });
-        }
-
-        // Helper function to revert post back to display mode
-        function revertPostToDisplayMode(postItem, contentToDisplay) {
-            const textarea = postItem.querySelector('textarea.post-content.editing');
-            const postContentElement = document.createElement('p');
-            postContentElement.classList.add('post-content');
-            postContentElement.textContent = contentToDisplay;
-            textarea.replaceWith(postContentElement);
-
-            const editControls = postItem.querySelector('.edit-controls');
-            if (editControls) {
-                editControls.remove();
-            }
-
-            const optionsMenu = postItem.querySelector('.post-options-menu');
-            if (optionsMenu) {
-                optionsMenu.style.display = '';
-            }
-        }
-
-        // --- Handle Delete Post ---
-        async function handleDeletePost(event) {
-            event.stopPropagation();
-            const postId = event.currentTarget.dataset.postid;
-
-            const postItem = document.querySelector(`.post-item[data-postid="${postId}"]`);
-            const dropdown = postItem.querySelector('.dropdown-content');
-            if (dropdown) dropdown.classList.remove('show');
-
-            if (confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-                try {
-                    await db.collection('posts').doc(postId).delete();
-                    console.log("Post successfully deleted:", postId);
-                    showMessage("Post deleted successfully!", 'success');
-                }
-                catch (error) {
-                    console.error("Error deleting post:", error);
-                    showMessage("Error deleting post. Please try again.", 'error');
-                }
-            }
-        }
-
-        // --- Handle Like Post ---
-        async function handleLikePost(event) {
-            const button = event.currentTarget;
-            const postId = button.dataset.postid;
-            let isLiked = button.dataset.liked === 'true';
-
-            if (!currentUser) {
-                showMessage('You must be logged in to like posts.', 'error');
-                return;
-            }
-
-            button.disabled = true;
-
-            const postRef = db.collection('posts').doc(postId);
-            const userId = currentUser.uid;
-
-            try {
-                if (isLiked) {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.arrayRemove(userId)
-                    });
-                    button.classList.remove('liked');
-                    button.querySelector('i').classList.replace('fas', 'far');
-                    button.dataset.liked = 'false';
-                    isLiked = false;
-                } else {
-                    await postRef.update({
-                        likes: firebase.firestore.FieldValue.arrayUnion(userId)
-                    });
-                    button.classList.add('liked');
-                    button.querySelector('i').classList.replace('far', 'fas');
-                    button.dataset.liked = 'true';
-                    isLiked = true;
-                }
-
-                const currentCount = parseInt(button.querySelector('span').textContent);
-                button.querySelector('span').textContent = isLiked ? currentCount + 1 : currentCount - 1;
-
-            } catch (error) {
-                console.error("Error liking/unliking post:", error);
-                showMessage('Failed to update like status. Please try again.', 'error');
-            } finally {
-                button.disabled = false;
-            }
-        }
-
-        // --- Handle Comment Click ---
-        function handleCommentClick(event) {
-            const postId = event.currentTarget.dataset.postid;
-            window.location.href = `comments.html?postId=${postId}`;
         }
 
         // Helper function to format timestamp
@@ -1658,4 +1686,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
