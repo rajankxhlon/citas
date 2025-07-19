@@ -1041,6 +1041,19 @@
             myStoryUploadMessage.textContent = "Uploading story...";
 
             try {
+                // --- NEW: Delete existing views before uploading a new story ---
+                const viewsRef = db.collection('stories').doc(currentUser.uid).collection('views');
+                const viewsSnapshot = await viewsRef.get();
+                if (!viewsSnapshot.empty) {
+                    const batch = db.batch();
+                    viewsSnapshot.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    console.log("Deleted old story views subcollection before new upload.");
+                }
+                // --- END NEW ---
+
                 const formData = new FormData();
                 formData.append('image', file);
 
