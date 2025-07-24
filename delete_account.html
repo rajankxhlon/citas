@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Account - Koo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif; /* Consistent with home.html */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #fffbe6; /* Light yellow background from home.html */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .delete-account-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px; /* Slightly more rounded, consistent with home.html cards */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-sizing: border-box;
+            border: 1px solid #eee; /* Subtle border for consistency */
+        }
+
+        .delete-account-container h1 {
+            color: #ff0000; /* Red for danger, but distinct from general theme */
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: bold; /* Consistent with home.html headings */
+        }
+
+        .delete-account-container p {
+            color: #333; /* Darker text for readability */
+            margin-bottom: 25px;
+            line-height: 1.5;
+            font-size: 16px;
+        }
+
+        .delete-account-container form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .delete-account-container input[type="email"],
+        .delete-account-container input[type="password"] {
+            width: calc(100% - 24px); /* Adjust for padding and border */
+            padding: 12px;
+            border: 1px solid #ccc; /* Softer border */
+            border-radius: 8px; /* Consistent with other inputs/buttons */
+            font-size: 16px;
+            background-color: #f9f9f9; /* Light background for inputs */
+        }
+
+        .delete-account-container input[type="email"]:focus,
+        .delete-account-container input[type="password"]:focus {
+            border-color: #ffcc00; /* Highlight on focus */
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2);
+        }
+
+        .delete-account-container button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            width: 100%;
+        }
+
+        .delete-account-container .delete-btn {
+            background-color: #ff0000; /* Clear red for delete action */
+            color: white;
+            margin-top: 10px;
+        }
+
+        .delete-account-container .delete-btn:hover {
+            background-color: #cc0000; /* Darker red on hover */
+        }
+
+        .delete-account-container .cancel-btn {
+            background-color: #e0e0e0; /* Neutral grey */
+            color: #333;
+        }
+
+        .delete-account-container .cancel-btn:hover {
+            background-color: #cccccc;
+        }
+
+        .error-message {
+            color: #ff0000; /* Red for errors */
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: left;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="delete-account-container">
+        <h1>Delete Your Account</h1>
+        <p>
+            You are about to permanently delete your account. This action cannot be undone.
+            All your Koos, profile data, and media will be removed.
+            To confirm, please re-enter your email and password.
+        </p>
+        <form id="delete-account-form">
+            <input type="email" id="email" placeholder="Your Email" required>
+            <input type="password" id="password" placeholder="Your Password" required>
+            <p id="error-message" class="error-message" style="display: none;"></p>
+            <button type="submit" class="delete-btn" id="confirm-delete-btn">Confirm Deletion</button>
+            <button type="button" class="cancel-btn" id="cancel-btn">Cancel</button>
+        </form>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+    <script>
+        // Your Firebase configuration (same as index.html, home.html, profile.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc",
+            authDomain: "citas-bd0a3.firebaseapp.com",
+            databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com",
+            projectId: "citas-bd0a3",
+            storageBucket: "citas-bd0a3.firebasestorage.app",
+            messagingSenderId: "1082213903517",
+            appId: "1:1082213903517:web:22409e051e5442f37ef874",
+            measurementId: "G-TXKMGDLMVB"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Firebase services
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Get elements
+        const deleteAccountForm = document.getElementById('delete-account-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+
+        let currentUserId = null;
+
+        // --- Helper Functions ---
+
+        // Function to delete a file from Firebase Storage
+        async function deleteFileFromFirebaseStorage(url) {
+            if (!url) return;
+            try {
+                const fileRef = storage.refFromURL(url);
+                await fileRef.delete();
+                console.log(`Successfully deleted file from storage: ${url}`);
+            } catch (error) {
+                // If file does not exist, it's not an error to prevent deletion
+                if (error.code === 'storage/object-not-found') {
+                    console.warn(`File not found in storage (already deleted or never existed): ${url}`);
+                } else {
+                    console.error(`Error deleting file from storage (${url}):`, error);
+                }
+            }
+        }
+
+        // --- Authentication State Listener ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUserId = user.uid;
+                emailInput.value = user.email; // Pre-fill email for convenience
+            } else {
+                // If not logged in, redirect to index
+                window.location.href = 'index.html';
+            }
+        });
+
+        // --- Event Listeners ---
+
+        cancelBtn.addEventListener('click', () => {
+            window.history.back(); // Go back to the previous page (profile.html)
+        });
+
+        deleteAccountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.textContent = 'Deleting...';
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            const user = auth.currentUser;
+
+            if (!user) {
+                errorMessage.textContent = 'No user is currently logged in. Please log in again.';
+                errorMessage.style.display = 'block';
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Confirm Deletion';
+                return;
+            }
+
+            if (user.email !== email) {
+                errorMessage.textContent = 'The email you entered does not match your current account email.';
+                errorMessage.style.display = 'block';
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Confirm Deletion';
+                return;
+            }
+
+            // Step 1: Re-authenticate the user
+            const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+            try {
+                await user.reauthenticateWithCredential(credential);
+                console.log('User re-authenticated successfully.');
+
+                // Step 2: Delete all user's Koos and associated media
+                const koosSnapshot = await db.collection('koos') // Changed 'tweets' to 'koos'
+                                                .where('userId', '==', currentUserId)
+                                                .get();
+
+                const deleteKooPromises = []; // Changed variable name
+                koosSnapshot.forEach(doc => {
+                    const kooData = doc.data(); // Changed variable name
+                    // Delete Koo video from Firebase Storage
+                    if (kooData.videoUrl) { // Assuming 'videoUrl' for Koos if applicable
+                        deleteKooPromises.push(deleteFileFromFirebaseStorage(kooData.videoUrl));
+                    }
+                    // Note: Images uploaded via ImgBB generally cannot be deleted directly via API unless a delete hash was stored.
+                    // We log a warning for awareness, but can't fully automate this.
+                    if (kooData.imageUrl) {
+                        console.warn(`Image for koo ${doc.id} (URL: ${kooData.imageUrl}) was uploaded to ImgBB. Direct deletion is not possible without a delete hash.`);
+                    }
+                    // Delete the Koo document itself
+                    deleteKooPromises.push(db.collection('koos').doc(doc.id).delete()); // Changed 'tweets' to 'koos'
+                });
+                await Promise.all(deleteKooPromises); // Changed variable name
+                console.log('All user koos and associated media (where possible) deleted.');
+
+                // Step 3: Delete user's profile picture/video and user document
+                const userDocRef = db.collection('users').doc(currentUserId);
+                const userDoc = await userDocRef.get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    // Delete profile video from Firebase Storage
+                    if (userData.profileVideoUrl) {
+                        await deleteFileFromFirebaseStorage(userData.profileVideoUrl);
+                    }
+                    // Note for profile picture on ImgBB
+                    if (userData.profilePictureUrl) {
+                        console.warn(`Profile picture (URL: ${userData.profilePictureUrl}) was uploaded to ImgBB. Direct deletion is not possible without a delete hash.`);
+                    }
+                }
+                // Delete the user document from Firestore
+                await userDocRef.delete();
+                console.log('User profile document deleted from Firestore.');
+
+                // Step 4: Delete the user authentication record
+                await user.delete();
+                console.log('User account deleted from Firebase Authentication.');
+
+                alert('Your account and all associated data have been permanently deleted.');
+                window.location.href = 'index.html'; // Redirect to login/registration page
+
+            } catch (error) {
+                console.error('Error during account deletion:', error);
+                errorMessage.textContent = 'Failed to delete account. Please check your credentials or try again later. Error: ' + error.message;
+                errorMessage.style.display = 'block';
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Confirm Deletion';
+
+                // Specific error messages for reauthentication
+                if (error.code === 'auth/wrong-password') {
+                    errorMessage.textContent = 'Incorrect password. Please try again.';
+                } else if (error.code === 'auth/invalid-credential') {
+                    errorMessage.textContent = 'Invalid credentials. Please check your email and password.';
+                } else if (error.code === 'auth/user-not-found') {
+                    errorMessage.textContent = 'User not found. Please log in again.';
+                } else if (error.code === 'auth/requires-recent-login') {
+                    errorMessage.textContent = 'This operation requires a recent login. Please log out and log in again, then try deleting your account.';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

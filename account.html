@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* General Body & Layout */
+        body {
+            font-family: 'Roboto', sans-serif; /* Changed font to Roboto */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f0f2f5; /* Light grey background */
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px; /* Adjusted padding */
+            box-sizing: border-box;
+            width: 100%;
+            margin-top: 60px; /* Space for fixed header */
+        }
+
+        /* Header Styling */
+        .header {
+            background: linear-gradient(to right, #4CAF50, #66BB6A); /* Green gradient header */
+            color: #fff; /* White text */
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed; /* Changed to fixed */
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header .header-left, .header .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .header .back-button {
+            background: none;
+            border: none;
+            color: #fff; /* White icon */
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 15px;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .header .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.2em; /* Adjusted font size */
+            font-weight: 500; /* Adjusted font weight */
+            flex-grow: 1;
+            text-align: center;
+            color: #fff; /* Ensure title is white */
+        }
+
+        /* Drawer Menu Icon */
+        .drawer-icon {
+            font-size: 1.5em; /* Adjusted font size */
+            color: #fff; /* White icon */
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .drawer-icon:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Drawer Menu */
+        .drawer-menu {
+            position: fixed;
+            top: 0;
+            right: -280px; /* Wider drawer */
+            width: 280px;
+            height: 100%;
+            background-color: #fff;
+            box-shadow: -4px 0 10px rgba(0, 0, 0, 0.25); /* Stronger shadow */
+            transition: right 0.3s ease;
+            z-index: 1500;
+            padding-top: 60px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer-menu.open {
+            right: 0;
+        }
+
+        .drawer-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1; /* Allows list to take available space */
+        }
+
+        .drawer-menu ul li a {
+            display: flex; /* For icon and text alignment */
+            align-items: center;
+            padding: 15px 20px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+        .drawer-menu ul li a i {
+            margin-right: 15px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .drawer-menu ul li a:hover {
+            background-color: #f5f5f5;
+        }
+
+        .drawer-menu .close-drawer-btn {
+            position: absolute;
+            top: 15px;
+            left: 20px; /* Positioned as back arrow */
+            font-size: 2em;
+            color: #666; /* Darker grey */
+            cursor: pointer;
+            z-index: 1501;
+            transition: color 0.2s ease;
+        }
+        .drawer-menu .close-drawer-btn:hover {
+            color: #333;
+        }
+
+        /* Account Details Card */
+        .account-details-card {
+            background-color: #ffffff;
+            padding: 30px; /* Increased padding */
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            width: 100%;
+            max-width: 500px; /* Slightly wider card */
+            margin-bottom: 20px;
+            text-align: center;
+            box-sizing: border-box;
+            border: none; /* Removed border */
+        }
+
+        .account-details-card h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 24px; /* Increased font size */
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0; /* Increased padding */
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item .label {
+            font-weight: 500; /* Adjusted font weight */
+            color: #555;
+            font-size: 1.1em; /* Adjusted font size */
+        }
+
+        .detail-item .value {
+            color: #333;
+            font-size: 1.1em; /* Adjusted font size */
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Increased gap */
+        }
+
+        /* Verified Tick SVG */
+        .verified-tick {
+            fill: rgb(0,150,241); /* Standard blue tick color */
+            margin-left: 5px; /* Adjusted margin */
+            vertical-align: middle;
+            flex-shrink: 0;
+            width: 20px; /* Increased size */
+            height: 20px; /* Increased size */
+        }
+
+        /* Buttons */
+        .action-button {
+            background-color: #4CAF50; /* Green button */
+            color: #fff; /* White text */
+            padding: 12px 25px; /* Adjusted padding */
+            border: none;
+            border-radius: 8px; /* Slightly less rounded */
+            cursor: pointer;
+            font-size: 1em; /* Adjusted font size */
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.2s ease-in-out;
+            width: 100%;
+            margin-top: 15px; /* Adjusted margin */
+        }
+
+        .action-button:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+
+        .delete-account-button {
+            background-color: #f44336; /* Red for delete */
+            color: white;
+            margin-top: 10px;
+        }
+
+        .delete-account-button:hover {
+            background-color: #da190b;
+        }
+
+        /* Modal Styling (for all modals) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px; /* Increased padding */
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+            width: 90%;
+            max-width: 450px; /* Slightly wider modal */
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px; /* Increased size */
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s ease;
+        }
+        .close-btn:hover {
+            color: #666;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            margin-bottom: 25px; /* Increased margin */
+            color: #333;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .modal-content input[type="password"] {
+            width: calc(100% - 20px); /* Adjusted for padding */
+            padding: 12px; /* Increased padding */
+            margin-bottom: 20px; /* Increased margin */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px; /* Increased gap */
+            margin-top: 25px; /* Increased margin */
+        }
+
+        .modal-buttons button {
+            padding: 10px 25px; /* Adjusted padding */
+            border: none;
+            border-radius: 8px; /* Slightly less rounded */
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .modal-buttons .save-btn {
+            background-color: #4CAF50; /* Green save button */
+            color: #fff;
+        }
+
+        .modal-buttons .save-btn:hover {
+            background-color: #45a049;
+        }
+
+        .modal-buttons .cancel-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .modal-buttons .cancel-btn:hover {
+            background-color: #cccccc;
+        }
+
+        .modal-error {
+            color: #f44336; /* Red error message */
+            font-size: 0.9em;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* Overlay for drawer when open */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 1400; /* Below drawer, above content */
+        }
+        .overlay.show {
+            display: block;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            .header { padding: 10px 15px; }
+            .header h1 { font-size: 1.1em; }
+            .header .back-button, .drawer-icon { font-size: 1.3em; margin: 0 10px; }
+            .main-content { padding: 15px; margin-top: 55px; }
+            .account-details-card { padding: 20px; max-width: 100%; }
+            .account-details-card h2 { font-size: 20px; margin-bottom: 20px; }
+            .detail-item { padding: 12px 0; font-size: 0.95em; }
+            .detail-item .label, .detail-item .value { font-size: 1em; }
+            .verified-tick { width: 16px; height: 16px; margin-left: 3px; }
+            .action-button { padding: 10px 20px; font-size: 0.95em; margin-top: 10px; }
+            .modal-content { padding: 20px; }
+            .modal-content h2 { font-size: 20px; margin-bottom: 20px; }
+            .modal-content input[type="password"] { padding: 10px; margin-bottom: 15px; }
+            .modal-buttons { gap: 10px; margin-top: 20px; }
+            .modal-buttons button { padding: 8px 15px; font-size: 0.9em; }
+
+            /* Drawer Mobile Specifics */
+            .drawer-menu {
+                width: 75%; /* Opens to 75% width on mobile */
+                right: -75%;
+            }
+            .drawer-menu.open {
+                right: 0;
+            }
+            .drawer-menu .close-drawer-btn {
+                font-size: 1.8em;
+                top: 10px;
+                left: 15px;
+            }
+            .drawer-menu ul li a {
+                padding: 12px 15px;
+                font-size: 0.95em;
+            }
+            .drawer-menu ul li a i {
+                margin-right: 10px;
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="back-button" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+        </div>
+        <h1>Account Settings</h1>
+        <div class="header-right">
+            <i class="fas fa-bars drawer-icon" id="drawer-icon"></i>
+        </div>
+    </header>
+
+    <div id="drawer-overlay" class="overlay"></div>
+
+    <div class="drawer-menu" id="drawer-menu">
+        <i class="fas fa-times close-drawer-btn" id="close-drawer-btn"></i>
+        <ul>
+            <li><a href="home.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="search.html"><i class="fas fa-search"></i> Search</a></li>
+            <li><a href="requests.html"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="verification.html"><i class="fas fa-check-circle"></i> Request Verification</a></li>
+            <li><a href="#" id="drawer-logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="account-details-card">
+            <h2>Your Account Details</h2>
+            <div class="detail-item">
+                <span class="label">Username:</span>
+                <span class="value" id="account-username"></span>
+            </div>
+            <div class="detail-item">
+                <span class="label">Email:</span>
+                <span class="value" id="account-email"></span>
+            </div>
+            <button class="action-button" id="change-password-btn">Change Password</button>
+            <button class="action-button" id="forgot-password-btn">Forgot Password</button>
+            <button class="action-button delete-account-button" id="delete-account-btn">Delete Account</button>
+        </div>
+    </div>
+
+    <div id="change-password-modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" id="close-change-password-modal-btn">&times;</span>
+            <h2>Change Password</h2>
+            <label for="old-password-input">Old Password:</label>
+            <input type="password" id="old-password-input" placeholder="Enter your old password">
+
+            <label for="new-password-input">New Password:</label>
+            <input type="password" id="new-password-input" placeholder="Enter new password">
+
+            <label for="confirm-new-password-input">Confirm New Password:</label>
+            <input type="password" id="confirm-new-password-input" placeholder="Confirm new password">
+
+            <p class="modal-error" id="change-password-error"></p>
+
+            <div class="modal-buttons">
+                <button id="cancel-change-password-btn" class="cancel-btn">Cancel</button>
+                <button id="save-new-password-btn" class="save-btn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+        // Your Firebase configuration (same as other HTML files)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc",
+            authDomain: "citas-bd0a3.firebaseapp.com",
+            databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com",
+            projectId: "citas-bd0a3",
+            storageBucket: "citas-bd0a3.firebasestorage.app",
+            messagingSenderId: "1082213903517",
+            appId: "1:1082213903517:web:22409e051e5442f37ef874",
+            measurementId: "G-TXKMGDLMVB"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Firebase services
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Get elements
+        const accountUsernameElement = document.getElementById('account-username');
+        const accountEmailElement = document.getElementById('account-email');
+
+        const changePasswordBtn = document.getElementById('change-password-btn');
+        const forgotPasswordBtn = document.getElementById('forgot-password-btn');
+        const deleteAccountBtn = document.getElementById('delete-account-btn'); // This one now redirects!
+
+        // Change Password Modal Elements (remain the same)
+        const changePasswordModalOverlay = document.getElementById('change-password-modal-overlay');
+        const closeChangePasswordModalBtn = document.getElementById('close-change-password-modal-btn');
+        const oldPasswordInput = document.getElementById('old-password-input');
+        const newPasswordInput = document.getElementById('new-password-input');
+        const confirmNewPasswordInput = document.getElementById('confirm-new-password-input');
+        const changePasswordError = document.getElementById('change-password-error');
+        const cancelChangePasswordBtn = document.getElementById('cancel-change-password-btn');
+        const saveNewPasswordBtn = document.getElementById('save-new-password-btn');
+
+        // Drawer Menu Elements
+        const drawerIcon = document.getElementById('drawer-icon');
+        const drawerMenu = document.getElementById('drawer-menu');
+        const closeDrawerBtn = document.getElementById('close-drawer-btn');
+        const drawerLogoutBtn = document.getElementById('drawer-logout-btn');
+        const drawerOverlay = document.getElementById('drawer-overlay'); // Get the new overlay
+
+        let currentUser = null;
+
+        // Function to create the verified tick SVG element (re-used from profile.html)
+        function createVerifiedTickSvg(size = 'small') {
+            const width = size === 'large' ? 22 : 20; // Adjusted for better visibility
+            const height = size === 'large' ? 22 : 20; // Adjusted for better visibility
+            const className = size === 'large' ? 'verified-tick large' : 'verified-tick'; // Removed 'small' class
+            const svgString = `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="${width}" height="${height}" viewBox="0 0 256 256" xml:space="preserve">
+            <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;" transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
+                <polygon points="45,6.18 57.06,0 64.41,11.38 77.94,12.06 78.62,25.59 90,32.94 83.82,45 90,57.06 78.62,64.41 77.94,77.94 64.41,78.62 57.06,90 45,83.82 32.94,90 25.59,78.62 12.06,77.94 11.38,64.41 0,57.06 6.18,45 0,32.94 11.38,25.59 12.06,12.06 25.59,11.38 32.94,0 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(0,150,241); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+                <polygon points="40.16,58.47 26.24,45.08 29.7,41.48 40.15,51.52 61.22,31.08 64.7,34.67 " style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" transform="  matrix(1 0 0 1 0 0) "/>
+            </g>
+            </svg>`;
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(svgString, "image/svg+xml");
+            return svgDoc.documentElement;
+        }
+
+        // --- Authentication State Listener ---
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                accountEmailElement.textContent = user.email;
+
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        const username = userData.username || 'N/A';
+                        const isVerified = userData.isVerified || false;
+
+                        accountUsernameElement.textContent = username;
+                        if (isVerified) {
+                            const tickSvg = createVerifiedTickSvg(); // Call without 'small'
+                            accountUsernameElement.appendChild(tickSvg);
+                        }
+                    } else {
+                        // Fallback if user doc doesn't exist (e.g., old accounts)
+                        const usernameQuery = await db.collection('usernames').where('userId', '==', user.uid).limit(1).get();
+                        if (!usernameQuery.empty) {
+                            const usernameDoc = usernameQuery.docs[0];
+                            const username = usernameDoc.id;
+                            const isVerified = usernameDoc.data().isVerified || false;
+                            accountUsernameElement.textContent = username;
+                            if (isVerified) {
+                                const tickSvg = createVerifiedTickSvg(); // Call without 'small'
+                                accountUsernameElement.appendChild(tickSvg);
+                            }
+                        } else {
+                            accountUsernameElement.textContent = 'Username Not Set';
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                    accountUsernameElement.textContent = 'Error loading username';
+                }
+            } else {
+                // No user is logged in, redirect to login page
+                window.location.href = 'index.html';
+            }
+        });
+
+        // --- Drawer Menu Functionality ---
+        drawerIcon.addEventListener('click', () => {
+            drawerMenu.classList.add('open');
+            drawerOverlay.classList.add('show'); // Show overlay
+        });
+
+        closeDrawerBtn.addEventListener('click', () => {
+            drawerMenu.classList.remove('open');
+            drawerOverlay.classList.remove('show'); // Hide overlay
+        });
+
+        drawerLogoutBtn.addEventListener('click', async (event) => {
+            event.preventDefault(); // Prevent default link behavior
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html'; // Redirect to login page
+            } catch (error) {
+                console.error("Error logging out:", error);
+                alert("Failed to logout. Please try again.");
+            }
+        });
+
+        // Close drawer if clicked outside (on the overlay)
+        drawerOverlay.addEventListener('click', () => {
+            drawerMenu.classList.remove('open');
+            drawerOverlay.classList.remove('show');
+        });
+
+        // --- Change Password Modal ---
+        changePasswordBtn.addEventListener('click', () => {
+            oldPasswordInput.value = '';
+            newPasswordInput.value = '';
+            confirmNewPasswordInput.value = '';
+            changePasswordError.textContent = '';
+            changePasswordModalOverlay.style.display = 'flex';
+        });
+
+        closeChangePasswordModalBtn.addEventListener('click', () => {
+            changePasswordModalOverlay.style.display = 'none';
+        });
+
+        cancelChangePasswordBtn.addEventListener('click', () => {
+            changePasswordModalOverlay.style.display = 'none';
+        });
+
+        saveNewPasswordBtn.addEventListener('click', async () => {
+            const oldPassword = oldPasswordInput.value;
+            const newPassword = newPasswordInput.value;
+            const confirmNewPassword = confirmNewPasswordInput.value;
+            changePasswordError.textContent = ''; // Clear previous errors
+
+            if (!oldPassword || !newPassword || !confirmNewPassword) {
+                changePasswordError.textContent = 'All fields are required.';
+                return;
+            }
+            if (newPassword !== confirmNewPassword) {
+                changePasswordError.textContent = 'New passwords do not match.';
+                return;
+            }
+            if (newPassword.length < 6) {
+                changePasswordError.textContent = 'New password must be at least 6 characters long.';
+                return;
+            }
+
+            saveNewPasswordBtn.textContent = 'Changing...';
+            saveNewPasswordBtn.disabled = true;
+
+            try {
+                // Re-authenticate user with old password
+                const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, oldPassword);
+                await currentUser.reauthenticateWithCredential(credential);
+
+                // Update password
+                await currentUser.updatePassword(newPassword);
+                alert('Password changed successfully!');
+                changePasswordModalOverlay.style.display = 'none';
+            } catch (error) {
+                console.error("Error changing password:", error);
+                if (error.code === 'auth/wrong-password') {
+                    changePasswordError.textContent = 'Incorrect old password.';
+                } else if (error.code === 'auth/requires-recent-login') {
+                    changePasswordError.textContent = 'Please log in again to change your password.';
+                    // Optionally, force logout to re-authenticate
+                    // await auth.signOut();
+                    // window.location.href = 'index.html';
+                } else {
+                    changePasswordError.textContent = `Failed to change password: ${error.message}`;
+                }
+            } finally {
+                saveNewPasswordBtn.textContent = 'Save Changes';
+                saveNewPasswordBtn.disabled = false;
+            }
+        });
+
+        // --- Forgot Password Functionality ---
+        forgotPasswordBtn.addEventListener('click', async () => {
+            if (!currentUser || !currentUser.email) {
+                alert("Could not retrieve your email. Please log in again.");
+                return;
+            }
+
+            if (confirm(`A password reset email will be sent to ${currentUser.email}. Do you want to proceed?`)) {
+                try {
+                    await auth.sendPasswordResetEmail(currentUser.email);
+                    alert("Password reset email sent! Please check your inbox.");
+                } catch (error) {
+                    console.error("Error sending password reset email:", error);
+                    alert(`Failed to send password reset email: ${error.message}`);
+                }
+            }
+        });
+
+        // --- Delete Account Button (Now redirects to delete_account.html) ---
+        deleteAccountBtn.addEventListener('click', () => {
+            window.location.href = 'delete_account.html'; // Redirect to the new page
+        });
+
+        // Close modals if clicked outside (only for the remaining change password modal)
+        document.addEventListener('click', (event) => {
+            if (event.target === changePasswordModalOverlay) {
+                changePasswordModalOverlay.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
