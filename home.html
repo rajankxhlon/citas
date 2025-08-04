@@ -58,18 +58,18 @@
             fill: #fff; /* White for header */
         }
 
-        /* New style for the stories text/link */
-        .header .stories-link {
+        /* NEW: Style for the stories icon */
+        .header .stories-icon {
             color: #fff;
-            font-size: 1.1em; /* Adjust font size as needed */
+            font-size: 1.5em; /* Adjust font size as needed to match logout */
             text-decoration: none;
             margin-right: 15px; /* Space between stories and logout icon */
             cursor: pointer;
             transition: opacity 0.3s ease;
-            font-weight: 500; /* Make it a bit bolder */
+            font-weight: 500;
         }
 
-        .header .stories-link:hover {
+        .header .stories-icon:hover {
             opacity: 0.8; /* Slight fade on hover */
         }
 
@@ -346,9 +346,9 @@
             .header { padding: 10px 15px; font-size: 1em; }
             .header .user-info { font-size: 0.95em; }
             .header .user-info i { font-size: 1.1em; }
-            /* Adjusted stories text/link size for smaller screens */
-            .header .stories-link {
-                font-size: 0.95em;
+            /* Adjusted stories icon size for smaller screens */
+            .header .stories-icon {
+                font-size: 1.3em;
                 margin-right: 10px;
             }
             .header .logout-icon { font-size: 1.3em; }
@@ -395,7 +395,7 @@
             <span id="headerVerifiedTickContainer"></span> 
         </div>
         <div>
-            <a href="stories.html" class="stories-link">Stories</a>
+            <a href="stories.html" class="stories-icon"><i class="fas fa-circle-notch"></i></a>
             <i class="fas fa-sign-out-alt logout-icon" id="logoutIcon"></i>
         </div>
     </div>
